@@ -6,7 +6,7 @@ use itertools::Itertools;
 */
 fn differs_by_exactly_one(a: &String, b: &String) -> bool {
     a.chars().zip(b.chars())
-        .filter(|ab| ab.0 != ab.1)
+        .filter(|(a, b)| a != b)
         .count() == 1
 }
 
