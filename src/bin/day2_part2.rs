@@ -77,6 +77,17 @@ fn find_differing_by_one(strings: &Vec<String>) -> (String, String) {
     panic!()
 }
 
+/*
+ Get the characters that are in the same position in each string.
+ Assumes both strings are of equal length.
+*/
+fn common_chars(a: &String, b: &String) -> String {
+    a.chars().zip(b.chars())
+        .filter(|(a,b)| a == b)
+        .map(|(c, _)| c)
+        .collect()
+}
+
 // Entry Point ////////////////////////////////////////////////////////////////
 
 fn get_input(path:&str) -> Vec<String> {
@@ -90,8 +101,11 @@ fn get_input(path:&str) -> Vec<String> {
 fn main() {
     let box_ids = get_input("res/input/day2.txt");
     let (a,b) = find_differing_by_one(&box_ids);
+    let common = common_chars(&a, &b);
 
     println!("Found two strings differing by exactly one character:");
-    println!("a: {}", a); // agi r mdjvlhedpsyoqfzuknpjwt
-    println!("b: {}", b); // agi t mdjvlhedpsyoqfzuknpjwt
+    println!("a: {}", a); // agirmdjvlhedpsyoqfzuknpjwt
+    println!("b: {}", b); // agitmdjvlhedpsyoqfzuknpjwt
+                          //    ^
+    println!("common: {}", common) // agimdjvlhedpsyoqfzuknpjwt
 }
