@@ -65,7 +65,7 @@ fn parse_claim(claim: &String) -> Claim {
  Find the total area of overlapping claims.
  Each claim is represented by a single line defining a rectangle in a 1000x1000 grid.
 */
-fn solve(lines: &Vec<String>) {
+fn solve(lines: &Vec<String>) -> i32 {
     let claims = lines.iter().map(parse_claim);
 
     // Mark claims
@@ -84,23 +84,33 @@ fn solve(lines: &Vec<String>) {
         }
     }
 
-    println!("Overlap: {}", overlap); // Sum: 121259
+    overlap
 }
 
 // Entry Point ////////////////////////////////////////////////////////////////
-
-//fn main() {
-//    solve(&get_input("res/input/day3.txt"))
-//}
 
 #[macro_use]
 extern crate criterion;
 use criterion::Criterion;
 
+/*
+ Timings:
+    DEBUG: ~75ms
+    RELEASE: ~2.25ms
+*/
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("benchmark",|b| {
-        b.iter(|| {                                 // DEBUG / RELEASE
-            solve(&get_input("res/input/day3.txt")) // ~75ms / ~2.25ms
+
+    // Setup
+    const INPUT_FILE: &str = "res/input/day3.txt";
+    let lines= get_input(INPUT_FILE);
+
+    // Print Answer
+    println!("\nOverlap: {}\n", solve(&lines));
+
+    // Run Benchmark
+    c.bench_function("benchmark",move |b| {
+        b.iter(|| {
+            solve(&lines)
         })
     });
 }
