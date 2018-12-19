@@ -61,10 +61,11 @@ fn parse_claim(claim: &String) -> Claim {
     }
 }
 
-// Entry Point ////////////////////////////////////////////////////////////////
-
-fn main() {
-    let lines = get_input("res/input/day3.txt");
+/*
+ Find the total area of overlapping claims.
+ Each claim is represented by a single line defining a rectangle in a 1000x1000 grid.
+*/
+fn solve(lines: &Vec<String>) {
     let claims = lines.iter().map(parse_claim);
 
     // Mark claims
@@ -83,5 +84,32 @@ fn main() {
         }
     }
 
-    println!("Sum: {}", overlap); // Sum: 121259
+    println!("Overlap: {}", overlap); // Sum: 121259
 }
+
+// Entry Point ////////////////////////////////////////////////////////////////
+
+//fn main() {
+//    solve(&get_input("res/input/day3.txt"))
+//}
+
+#[macro_use]
+extern crate criterion;
+use criterion::Criterion;
+
+fn criterion_benchmark(c: &mut Criterion) {
+    c.bench_function("benchmark",|b| {
+        b.iter(|| {                                 // DEBUG / RELEASE
+            solve(&get_input("res/input/day3.txt")) // ~75ms / ~2.25ms
+        })
+    });
+}
+
+criterion_group!{
+    name = benches;
+    config = Criterion::default()
+        .warm_up_time(std::time::Duration::new(1,0))
+        .sample_size(2);
+    targets = criterion_benchmark
+}
+criterion_main!(benches);
