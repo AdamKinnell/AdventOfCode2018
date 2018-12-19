@@ -14,10 +14,10 @@ struct Claim {
  of every square inch.
 */
 impl Claim {
-    fn apply(&self, fabric: &mut [[u8; 1000]; 1000]) {
+    fn apply(&self, fabric: &mut std::collections::HashMap<(i32,i32),u8>) {
         for y in self.y..(self.y + self.height) {
             for x in self.x..(self.x + self.width) {
-                let point = &mut fabric[y as usize][x as usize];
+                let point = fabric.entry((x,y)).or_default();
                 *point = point.saturating_add(1);
             }
         }
@@ -69,18 +69,16 @@ fn solve(lines: &Vec<String>) -> i32 {
     let claims = lines.iter().map(parse_claim);
 
     // Mark claims
-    let mut fabric = [[0u8; 1000]; 1000];
+    let mut fabric = std::collections::HashMap::new();
     for claim in claims {
         claim.apply(&mut fabric);
     }
 
     // Count squares which are claimed multiple times
     let mut overlap = 0;
-    for row in fabric.iter() {
-        for num_claims in row.iter() {
-            if *num_claims > 1 {
-                overlap += 1;
-            }
+    for num_claims in fabric.values() {
+        if *num_claims > 1 {
+            overlap += 1;
         }
     }
 
@@ -95,8 +93,10 @@ use criterion::Criterion;
 
 /*
  Timings:
-    DEBUG: ~75ms
-    RELEASE: ~2.25ms
+    DEBUG: ~1.8s
+    RELEASE: ~70ms
+ Answer:
+    Overlap: 121259
 */
 fn criterion_benchmark(c: &mut Criterion) {
 
