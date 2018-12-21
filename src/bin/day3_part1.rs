@@ -70,21 +70,16 @@ fn solve(lines: &Vec<String>) -> i32 {
 
     // Mark claims
     let mut fabric = [[0u8; 1000]; 1000];
-    for claim in claims {
-        claim.apply(&mut fabric);
-    }
+    claims.for_each(|claim| claim.apply(&mut fabric));
 
     // Count squares which are claimed multiple times
-    let mut overlap = 0;
-    for row in fabric.iter() {
-        for num_claims in row.iter() {
-            if *num_claims > 1 {
-                overlap += 1;
-            }
-        }
-    }
+    let overlap = fabric.iter()
+        .map(|r| r.iter())
+        .flatten()
+        .filter(|claims| **claims > 1)
+        .count();
 
-    overlap
+    overlap as i32
 }
 
 // Entry Point ////////////////////////////////////////////////////////////////
@@ -95,8 +90,8 @@ use criterion::Criterion;
 
 /*
  Timings:
-    DEBUG: ~75ms
-    RELEASE: ~2.25ms
+    DEBUG: ~88.5ms
+    RELEASE: ~2.1ms
 */
 fn criterion_benchmark(c: &mut Criterion) {
 
@@ -105,7 +100,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let lines= get_input(INPUT_FILE);
 
     // Print Answer
-    println!("\nOverlap: {}\n", solve(&lines));
+    println!("\nOverlap: {}\n", solve(&lines)); // Overlap: 121259
 
     // Run Benchmark
     c.bench_function("benchmark",move |b| {
