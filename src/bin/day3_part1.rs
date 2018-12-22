@@ -1,5 +1,7 @@
+#[macro_use] mod common;
+use self::common::*;
 
-// Structs ////////////////////////////////////////////////////////////////////
+// Types ////////////////////////////////////////////////////////////////////
 
 struct Claim {
     _id: i32,
@@ -25,17 +27,6 @@ impl Claim {
 }
 
 // Functions //////////////////////////////////////////////////////////////////
-
-/*
- Read lines from a file.
-*/
-fn get_input(path:&str) -> Vec<String> {
-    std::fs::read_to_string(path)
-        .unwrap()
-        .lines()
-        .map(String::from)
-        .collect()
-}
 
 /*
  Parse a claim from a string in the following format:
@@ -84,37 +75,18 @@ fn solve(lines: &Vec<String>) -> i32 {
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
-#[macro_use]
-extern crate criterion;
-use criterion::Criterion;
+/*
+ Overlap: 121259
+*/
+run_without_benchmark!("day3", |lines: &Vec<String>| {
+    println!("\nOverlap: {}\n", solve(&lines));
+});
 
 /*
  Timings:
     DEBUG: ~88.5ms
     RELEASE: ~2.1ms
 */
-fn criterion_benchmark(c: &mut Criterion) {
-
-    // Setup
-    const INPUT_FILE: &str = "res/input/day3.txt";
-    let lines= get_input(INPUT_FILE);
-
-    // Print Answer
-    println!("\nOverlap: {}\n", solve(&lines)); // Overlap: 121259
-
-    // Run Benchmark
-    c.bench_function("benchmark",move |b| {
-        b.iter(|| {
-            solve(&lines)
-        })
-    });
-}
-
-criterion_group!{
-    name = benches;
-    config = Criterion::default()
-        .warm_up_time(std::time::Duration::new(1,0))
-        .sample_size(2);
-    targets = criterion_benchmark
-}
-criterion_main!(benches);
+//run_with_benchmark!("day3", |lines: &Vec<String>| {
+//    solve(lines)
+//});

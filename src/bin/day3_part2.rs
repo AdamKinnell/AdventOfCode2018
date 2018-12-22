@@ -1,7 +1,9 @@
+#[macro_use] mod common;
+use self::common::*;
+
+// Types //////////////////////////////////////////////////////////////////////
 
 type FabricSheet = [[u8; 1000]; 1000];
-
-// Structs ////////////////////////////////////////////////////////////////////
 
 struct Claim {
     id: i32,
@@ -50,17 +52,6 @@ impl Claim {
 // Functions //////////////////////////////////////////////////////////////////
 
 /*
- Read lines from a file.
-*/
-fn get_input(path:&str) -> Vec<String> {
-    std::fs::read_to_string(path)
-        .unwrap()
-        .lines()
-        .map(String::from)
-        .collect()
-}
-
-/*
  Parse a claim from a string in the following format:
      #1 @ 509,796: 18x15
 */
@@ -107,37 +98,18 @@ fn solve(lines: &Vec<String>) -> i32 {
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
-#[macro_use]
-extern crate criterion;
-use criterion::Criterion;
+/*
+ Non-overlapping ID: 239
+*/
+run_without_benchmark!("day3", |lines: &Vec<String>| {
+    println!("\nNon-overlapping ID: {}\n", solve(lines)); //
+});
 
 /*
  Timings:
     DEBUG: ~53ms
     RELEASE: ~1.48ms
 */
-fn criterion_benchmark(c: &mut Criterion) {
-
-    // Setup
-    const INPUT_FILE: &str = "res/input/day3.txt";
-    let lines= get_input(INPUT_FILE);
-
-    // Print Answer
-    println!("\nNon-overlapping ID: {}\n", solve(&lines)); // Non-overlapping ID: 239
-
-    // Run Benchmark
-    c.bench_function("benchmark",move |b| {
-        b.iter(|| {
-            solve(&lines)
-        })
-    });
-}
-
-criterion_group!{
-    name = benches;
-    config = Criterion::default()
-        .warm_up_time(std::time::Duration::new(1,0))
-        .sample_size(2);
-    targets = criterion_benchmark
-}
-criterion_main!(benches);
+//run_with_benchmark!("day3", |lines: &Vec<String>| {
+//    solve(lines)
+//});
