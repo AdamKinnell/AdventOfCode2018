@@ -44,8 +44,8 @@ macro_rules! run_with_benchmark {
         criterion_group!{
             name = benches;
             config = Criterion::default()
-                .warm_up_time(std::time::Duration::new(1,0))
-                .sample_size(2);
+                .warm_up_time(std::time::Duration::new(2,0))
+                .sample_size(10);
             targets = criterion_benchmark
         }
         criterion_main!(benches);

@@ -6,15 +6,10 @@ use std::collections::HashMap;
 
 // Types //////////////////////////////////////////////////////////////////////
 
-enum EventInfo {
+enum Event {
     ShiftChangeTo(i32),
     WakeUpAt(i32),
     SleepAt(i32),
-}
-
-struct Event {
-    _date: String,
-    info: EventInfo,
 }
 
 impl Event {
@@ -25,19 +20,19 @@ impl Event {
             .map(String::from)
             .collect::<Vec<String>>();
 
-        if let [date, _hour, minute, word_1, word_2] = &parts[0..5] {
+        if let [_date, _hour, minute, word_1, word_2] = &parts[0..5] {
             match word_1.as_ref() {
                 "Guard" => {
                     let id: i32 = word_2.parse().unwrap();
-                    Event { _date:date.clone(), info: EventInfo::ShiftChangeTo(id) }
+                    Event::ShiftChangeTo(id)
                 },
                 "wakes" => {
                     let minute = minute.parse().unwrap();
-                    Event { _date:date.clone(), info: EventInfo::WakeUpAt(minute) }
+                    Event::WakeUpAt(minute)
                 },
                 "falls" => {
                     let minute = minute.parse().unwrap();
-                    Event { _date:date.clone(), info: EventInfo::SleepAt(minute) }
+                    Event::SleepAt(minute)
                 },
                 _ => {
                     panic!("Unknown event")
@@ -50,7 +45,7 @@ impl Event {
 }
 struct Shift {
     guard: i32,
-    events: Vec<EventInfo> // Must be ordered and non-overlapping
+    events: Vec<Event> // Must be ordered and non-overlapping
 }
 
 impl Shift {
@@ -59,11 +54,11 @@ impl Shift {
         let mut is_asleep = false;
         for event in self.events.iter() {
             match event {
-                EventInfo::WakeUpAt(e_min) if is_asleep => {
+                Event::WakeUpAt(e_min) if is_asleep => {
                     if min < *e_min { return true } // Asleep before wake event
                     is_asleep = false;
                 },
-                EventInfo::SleepAt(e_min) if !is_asleep => {
+                Event::SleepAt(e_min) if !is_asleep => {
                     if min < *e_min { return false } // Awake before sleep event
                     is_asleep = true;
                 },
@@ -80,8 +75,8 @@ impl Shift {
         let mut sleep_at = 0;
         for event in self.events.iter() {
             match event {
-                EventInfo::WakeUpAt(m) => mins_asleep += m - sleep_at,
-                EventInfo::SleepAt(m) => sleep_at = *m,
+                Event::WakeUpAt(m) => mins_asleep += m - sleep_at,
+                Event::SleepAt(m) => sleep_at = *m,
                 _ => panic!(),
             }
         }
@@ -97,9 +92,8 @@ where I : Iterator<Item=Event>
     let mut shifts = Vec::new();
 
     for event in events {
-        use self::EventInfo::*;
-        match event.info {
-            ShiftChangeTo(id) => {
+        match event {
+            Event::ShiftChangeTo(id) => {
                 shifts.push(Shift { guard: id, events: Vec::new() });
             },
             other => {
@@ -176,8 +170,8 @@ run_without_benchmark!("day4", |lines: &Vec<String>| {
 
 /*
  Timings:
-    DEBUG: ~25.4ms
-    RELEASE: ~1.80ms
+    DEBUG: ~25.2ms
+    RELEASE: ~1.66ms
 */
 //run_with_benchmark!("day4", |lines| {
 //    solve(lines);
