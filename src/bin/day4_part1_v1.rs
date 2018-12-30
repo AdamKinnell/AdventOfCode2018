@@ -176,8 +176,8 @@ run_without_benchmark!("day4", |lines: &Vec<String>| {
 
 /*
  Timings:
-    DEBUG: 24.5ms
-    RELEASE: 1.56ms
+    DEBUG: ~25.4ms
+    RELEASE: ~1.80ms
 */
 //run_with_benchmark!("day4", |lines| {
 //    solve(lines);
