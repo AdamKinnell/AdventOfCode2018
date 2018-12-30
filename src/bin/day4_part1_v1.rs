@@ -13,31 +13,31 @@ enum EventInfo {
 }
 
 struct Event {
-    date: String,
+    _date: String,
     info: EventInfo,
 }
 
 impl Event {
     fn parse(line: &String) -> Event {
         let parts= line
-            .replace(|c| "[]:#".contains(c),"")
+            .replace(|c| "[]:#".contains(c)," ")
             .split_whitespace()
             .map(String::from)
             .collect::<Vec<String>>();
 
-        if let [date, minute, word_1, word_2] = &parts[0..4] {
+        if let [date, _hour, minute, word_1, word_2] = &parts[0..5] {
             match word_1.as_ref() {
                 "Guard" => {
                     let id: i32 = word_2.parse().unwrap();
-                    Event { date:date.clone(), info: EventInfo::ShiftChangeTo(id) }
+                    Event { _date:date.clone(), info: EventInfo::ShiftChangeTo(id) }
                 },
                 "wakes" => {
                     let minute = minute.parse().unwrap();
-                    Event { date:date.clone(), info: EventInfo::WakeUpAt(minute) }
+                    Event { _date:date.clone(), info: EventInfo::WakeUpAt(minute) }
                 },
                 "falls" => {
                     let minute = minute.parse().unwrap();
-                    Event { date:date.clone(), info: EventInfo::SleepAt(minute) }
+                    Event { _date:date.clone(), info: EventInfo::SleepAt(minute) }
                 },
                 _ => {
                     panic!("Unknown event")
