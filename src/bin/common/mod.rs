@@ -1,24 +1,51 @@
 
-/*
- Read lines from a file.
-*/
-pub fn to_lines(raw: &str) -> Vec<String> {
-    raw.lines()
-        .map(String::from)
-        .collect()
-}
+// Input //////////////////////////////////////////////////////////////////////
 
 /*
- Run
+ Represents the input to a puzzle.
 */
+pub struct Input {
+    raw: String
+}
+
+impl Input {
+
+    pub fn new(path: String) -> Input {
+        let raw = std::fs::read_to_string(path)
+            .unwrap();
+
+        Input { raw:raw }
+    }
+
+    /*
+     Get the raw input as a string.
+    */
+    #[allow(dead_code)]
+    pub fn raw(&self) -> &String {
+        &self.raw
+    }
+
+    /*
+     Get the input as a series of lines.
+    */
+    #[allow(dead_code)]
+    pub fn to_lines(&self) -> Vec<String> {
+        self.raw.lines()
+            .map(String::from)
+            .collect()
+    }
+}
+
+// Harness ////////////////////////////////////////////////////////////////////
+
 #[allow(unused_macros)]
 macro_rules! run_without_benchmark {
     ($d:expr, $f:expr) => {
         fn main() {
             let path = ["res/input/", $d, ".txt"].join("");
-            let raw = std::fs::read_to_string(path).unwrap();
-            let lines = to_lines(&raw);
-            $f(&raw, &lines);
+            let input = common::Input::new(path);
+
+            $f(&input);
         }
     }
 }
@@ -32,12 +59,11 @@ macro_rules! run_with_benchmark {
 
         fn criterion_benchmark(c: &mut Criterion) {
             let path = ["res/input/", $d, ".txt"].join("");
-            let raw = std::fs::read_to_string(path).unwrap();
-            let lines = to_lines(&raw);
+            let input = common::Input::new(path);
 
             c.bench_function("benchmark", move |b| {
                 b.iter(|| {
-                    $f(&raw, &lines)
+                    $f(&input);
                 })
             });
         }

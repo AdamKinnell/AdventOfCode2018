@@ -146,8 +146,8 @@ fn solve(lines: &Vec<String>) -> (i32, i32) {
  Minute: 49
  Answer: 117061
 */
-run_without_benchmark!("day4", |_, lines: &Vec<String>| {
-    let (guard, minute) = solve(lines);
+run_without_benchmark!("day4", |input: &Input| {
+    let (guard, minute) = solve(&input.to_lines());
     println!("\nGuard: {}", guard);
     println!("Minute: {}", minute);
     println!("Answer: {}\n", guard * minute);

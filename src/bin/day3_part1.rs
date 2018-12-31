@@ -78,8 +78,8 @@ fn solve(lines: &Vec<String>) -> i32 {
 /*
  Overlap: 121259
 */
-run_without_benchmark!("day3", |_, lines: &Vec<String>| {
-    println!("\nOverlap: {}\n", solve(&lines));
+run_without_benchmark!("day3", |input: &Input| {
+    println!("\nOverlap: {}\n", solve(&input.to_lines()));
 });
 
 /*
