@@ -101,7 +101,7 @@ fn solve(lines: &Vec<String>) -> i32 {
 /*
  Non-overlapping ID: 239
 */
-run_without_benchmark!("day3", |lines: &Vec<String>| {
+run_without_benchmark!("day3", |_, lines: &Vec<String>| {
     println!("\nNon-overlapping ID: {}\n", solve(lines)); //
 });
 

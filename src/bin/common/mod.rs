@@ -2,10 +2,8 @@
 /*
  Read lines from a file.
 */
-pub fn get_input(path: &str) -> Vec<String> {
-    std::fs::read_to_string(path)
-        .unwrap()
-        .lines()
+pub fn to_lines(raw: &str) -> Vec<String> {
+    raw.lines()
         .map(String::from)
         .collect()
 }
@@ -18,8 +16,9 @@ macro_rules! run_without_benchmark {
     ($d:expr, $f:expr) => {
         fn main() {
             let path = ["res/input/", $d, ".txt"].join("");
-            let lines = get_input(&path);
-            $f(&lines);
+            let raw = std::fs::read_to_string(path).unwrap();
+            let lines = to_lines(&raw);
+            $f(&raw, &lines);
         }
     }
 }
@@ -33,10 +32,12 @@ macro_rules! run_with_benchmark {
 
         fn criterion_benchmark(c: &mut Criterion) {
             let path = ["res/input/", $d, ".txt"].join("");
-            let lines = get_input(&path);
+            let raw = std::fs::read_to_string(path).unwrap();
+            let lines = to_lines(&raw);
+
             c.bench_function("benchmark", move |b| {
                 b.iter(|| {
-                    $f(&lines)
+                    $f(&raw, &lines)
                 })
             });
         }
