@@ -10,7 +10,10 @@ fn can_react(a: char, b: char) -> bool {
     (a as i32 - b as i32).abs() == 32
 }
 
-fn solve(polymer: &String) -> usize {
+/*
+ Process polymer reactions until inert.
+*/
+fn react(polymer: &String) -> String {
 
     let mut polymer= polymer.clone()
         .chars()
@@ -31,8 +34,7 @@ fn solve(polymer: &String) -> usize {
         }
 
         if polymer.len() == polymer_temp.len() {
-            // No more reactions in polymer
-            break;
+            break; // No more reactions in polymer
         } else {
             // Prepare for next scan
             std::mem::swap(&mut polymer, &mut polymer_temp);
@@ -40,14 +42,21 @@ fn solve(polymer: &String) -> usize {
         }
     }
 
-    polymer.len()
+    polymer.into_iter().collect()
+}
+
+/*
+ Find length of polymer after all interactions have been resolved.
+*/
+fn solve(polymer: &String) -> usize {
+    react(polymer).len()
 }
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
 /*
  Timings:
-    DEBUG: ~111ms
+    DEBUG: ~112ms
     RELEASE: ~1.4ms
 */
 run!{
