@@ -1,6 +1,8 @@
 #[macro_use] mod common;
 use self::common::*;
 
+use itertools::Itertools;
+
 // Functions //////////////////////////////////////////////////////////////////
 
 /*
@@ -10,45 +12,53 @@ fn can_react(a: char, b: char) -> bool {
     (a as i32 - b as i32).abs() == 32
 }
 
-fn solve(polymer: &String) -> usize {
-
+/*
+ Process polymer reactions until inert.
+*/
+fn react(polymer: &String) -> String {
+    let capacity = polymer.len();
     let mut polymer= polymer.clone()
         .chars()
         .collect::<Vec<char>>();
-    let mut polymer_temp = Vec::<char>::with_capacity(polymer.len());
 
-    // Process reactions until inert
+    // Perform multiple passes to scan for reactions
     loop {
-        // Perform one scan for reactions
-        let mut i = 0;
-        while i < polymer.len() {
-            if i+1 < polymer.len() && can_react(polymer[i], polymer[i+1]) {
-                i += 2;
+        let mut iter = polymer.iter()
+            .chain(Some(' ').iter())
+            .tuple_windows();
+
+        let mut result = Vec::with_capacity(capacity);
+        while let Some((&a,&b)) = iter.next() {
+            if can_react(a,b) {
+                let _ = iter.next();
             } else {
-                polymer_temp.push(polymer[i]);
-                i += 1;
+                result.push(a);
             }
         }
 
-        if polymer.len() == polymer_temp.len() {
-            // No more reactions in polymer
-            break;
+        if polymer.len() == result.len() {
+            break; // No more reactions in polymer
         } else {
-            // Prepare for next scan
-            std::mem::swap(&mut polymer, &mut polymer_temp);
-            polymer_temp.clear();
+            polymer = result; // Prepare for next scan
         }
     }
 
-    polymer.len()
+    polymer.into_iter().collect()
+}
+
+/*
+ Find length of polymer after all interactions have been resolved.
+*/
+fn solve(polymer: &String) -> usize {
+    react(polymer).len()
 }
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
 /*
  Timings:
-    DEBUG: ~111ms
-    RELEASE: ~1.4ms
+    DEBUG: ~75.7ms
+    RELEASE: ~1.76ms
 */
 run!{
     input = "day5",
