@@ -1,8 +1,6 @@
 #[macro_use] mod common;
 use self::common::*;
 
-use itertools::Itertools;
-
 // Functions //////////////////////////////////////////////////////////////////
 
 /*
@@ -14,26 +12,32 @@ fn can_react(a: char, b: char) -> bool {
 
 fn solve(polymer: &String) -> usize {
 
-    let mut polymer = polymer.clone()
+    let mut polymer= polymer.clone()
         .chars()
         .collect::<Vec<char>>();
+    let mut polymer_temp = Vec::<char>::with_capacity(polymer.len());
 
+    // Process reactions until inert
     loop {
-        let mut reactions = 0;
-
-        let mut i = 0 as usize;
-        while i < polymer.len() - 1 {
-            if can_react(polymer[i], polymer[i+1]) {
-                reactions += 1;
-                polymer.remove(i); // Remove unit a
-                polymer.remove(i); // Remove unit b (now in place of a)
-                // i is now at next unit
+        // Perform one scan for reactions
+        let mut i = 0;
+        while i < polymer.len() {
+            if i+1 < polymer.len() && can_react(polymer[i], polymer[i+1]) {
+                i += 2;
             } else {
+                polymer_temp.push(polymer[i]);
                 i += 1;
             }
         }
 
-        if reactions == 0 { break; }
+        if polymer.len() == polymer_temp.len() {
+            // No more reactions in polymer
+            break;
+        } else {
+            // Prepare for next scan
+            std::mem::swap(&mut polymer, &mut polymer_temp);
+            polymer_temp.clear();
+        }
     }
 
     polymer.len()
@@ -43,8 +47,8 @@ fn solve(polymer: &String) -> usize {
 
 /*
  Timings:
-    DEBUG: ~135ms
-    RELEASE: ~83ms
+    DEBUG: ~111ms
+    RELEASE: ~1.4ms
 */
 run!{
     input = "day5",
