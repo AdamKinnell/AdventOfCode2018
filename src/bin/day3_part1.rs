@@ -75,18 +75,16 @@ fn solve(lines: &Vec<String>) -> i32 {
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
-/*
- Overlap: 121259
-*/
-run_without_benchmark!("day3", |input: &Input| {
-    println!("\nOverlap: {}\n", solve(&input.to_lines()));
-});
-
-/*
- Timings:
-    DEBUG: ~88.5ms
-    RELEASE: ~2.1ms
-*/
-//run_with_benchmark!("day3", |lines: &Vec<String>| {
-//    solve(lines)
-//});
+run! {
+    input = "day3",
+    run = |input: &Input| {
+        let overlap = solve(&input.to_lines());
+        assert_eq!(overlap, 121259);
+        println!("Overlap: {}", overlap);
+    },
+    bench = |input: &Input| {
+        // DEBUG: ~89.1ms
+        // RELEASE: ~2.0ms
+        solve(&input.to_lines())
+    }
+}

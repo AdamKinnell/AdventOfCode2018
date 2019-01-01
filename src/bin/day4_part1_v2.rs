@@ -137,23 +137,23 @@ fn solve(lines: &Vec<String>) -> (i32, i32) {
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
-/*
- Id: 131
- Minute: 36
- Answer: 4716
-*/
-run_without_benchmark!("day4", |input: &Input| {
-    let (id, minute) = solve(&input.to_lines());
-    println!("\nID: {}", id);
-    println!("Minute: {}", minute);
-    println!("Answer: {}\n", id * minute);
-});
+run! {
+    input = "day4",
+    run = |input: &Input| {
+        let (id, minute) = solve(&input.to_lines());
+        let answer = id * minute;
 
-/*
- Timings:
-    DEBUG: ~26.1ms
-    RELEASE: ~1.77ms
-*/
-//run_with_benchmark!("day4", |lines| {
-//    solve(lines);
-//});
+        assert_eq!(id, 131);
+        assert_eq!(minute, 36);
+        assert_eq!(answer, 4716);
+
+        println!("ID: {}", id);
+        println!("Minute: {}", minute);
+        println!("Answer: {}", answer);
+    },
+    bench = |input: &Input| {
+        // DEBUG: ~27.1ms
+        // RELEASE: ~1.87ms
+        solve(&input.to_lines())
+    }
+}

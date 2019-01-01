@@ -98,18 +98,16 @@ fn solve(lines: &Vec<String>) -> i32 {
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
-/*
- Non-overlapping ID: 239
-*/
-run_without_benchmark!("day3", |input: &Input| {
-    println!("\nNon-overlapping ID: {}\n", solve(&input.to_lines())); //
-});
-
-/*
- Timings:
-    DEBUG: ~53ms
-    RELEASE: ~1.48ms
-*/
-//run_with_benchmark!("day3", |lines: &Vec<String>| {
-//    solve(lines)
-//});
+run! {
+    input = "day3",
+    run = |input: &Input| {
+        let id = solve(&input.to_lines());
+        assert_eq!(id, 239);
+        println!("Non-overlapping ID: {}", id);
+    },
+    bench = |input: &Input| {
+        // DEBUG: ~54.3ms
+        // RELEASE: ~1.56ms
+        solve(&input.to_lines())
+    }
+}

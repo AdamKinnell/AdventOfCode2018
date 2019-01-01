@@ -38,43 +38,40 @@ impl Input {
 
 // Harness ////////////////////////////////////////////////////////////////////
 
-#[allow(unused_macros)]
-macro_rules! run_without_benchmark {
-    ($d:expr, $f:expr) => {
-        fn main() {
-            let path = ["res/input/", $d, ".txt"].join("");
-            let input = common::Input::new(path);
+macro_rules! run {
+    (input = $input:expr, run = $f_run:expr, bench = $f_bench:expr) => {
 
-            $f(&input);
+        fn main_run(input: &Input) {
+            $f_run(&input);
         }
-    }
-}
 
-#[allow(unused_macros)]
-macro_rules! run_with_benchmark {
+        fn main_bench(input: Input) {
+            let mut criterion = criterion::Criterion::default()
+                .warm_up_time(std::time::Duration::new(2,0))
+                .measurement_time(std::time::Duration::new(5, 0))
+                .sample_size(25)
+                .configure_from_args();
 
-    ($d:expr, $f:expr) => {
-        #[macro_use]extern crate criterion;
-        use criterion::Criterion;
-
-        fn criterion_benchmark(c: &mut Criterion) {
-            let path = ["res/input/", $d, ".txt"].join("");
-            let input = common::Input::new(path);
-
-            c.bench_function("benchmark", move |b| {
+            criterion.bench_function(file!(), move |b| {
                 b.iter(|| {
-                    $f(&input);
+                    $f_bench(&input);
                 })
             });
+
+            criterion.final_summary();
         }
 
-        criterion_group!{
-            name = benches;
-            config = Criterion::default()
-                .warm_up_time(std::time::Duration::new(2,0))
-                .sample_size(10);
-            targets = criterion_benchmark
+        fn main() {
+
+            // Setup
+            let path = ["res/input/", $input, ".txt"].join("");
+            let input = common::Input::new(path);
+
+            println!("\n======== RUN ========\n");
+            main_run(&input);
+
+            println!("\n======== BENCH ========\n");
+            main_bench(input);
         }
-        criterion_main!(benches);
     }
 }
