@@ -18,27 +18,27 @@ fn react(polymer: &String) -> String {
     let mut polymer= polymer.clone()
         .chars()
         .collect::<Vec<char>>();
-    let mut polymer_temp = Vec::<char>::with_capacity(polymer.len());
 
     // Process reactions until inert
     loop {
         // Perform one scan for reactions
         let mut i = 0;
+        let mut result = Vec::<char>::with_capacity(polymer.len());
         while i < polymer.len() {
             if i+1 < polymer.len() && can_react(polymer[i], polymer[i+1]) {
                 i += 2;
             } else {
-                polymer_temp.push(polymer[i]);
+                result.push(polymer[i]);
                 i += 1;
             }
         }
 
-        if polymer.len() == polymer_temp.len() {
-            break; // No more reactions in polymer
+        if polymer.len() == result.len() {
+            // No more reactions in polymer
+            break;
         } else {
             // Prepare for next scan
-            std::mem::swap(&mut polymer, &mut polymer_temp);
-            polymer_temp.clear();
+            polymer = result;
         }
     }
 
@@ -56,8 +56,8 @@ fn solve(polymer: &String) -> usize {
 
 /*
  Timings:
-    DEBUG: ~112ms
-    RELEASE: ~1.4ms
+    DEBUG: ~82ms
+    RELEASE: ~1.35ms
 */
 run!{
     input = "day5",
