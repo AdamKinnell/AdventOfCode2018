@@ -24,10 +24,45 @@ impl <'a,T> SparseVector<T> {
         SparseVector { elements:vec, gaps:gaps }
     }
 
-    // Traversal //////////////////////////////////////////
+    // Operations /////////////////////////////////////////
+
+    /*
+     Mark the current element as removed, then update gap info.
+     Algorithm is similar to removal and relinking in a doubly linked list.
+
+     The indices of the previous and next elements will be returned (if they exist).
+    */
+    fn remove_at(&mut self, pos: usize) -> (Option<usize>, Option<usize>) {
+
+        // Get the index of prev (if exists)
+        let prev = self.traverse(pos, false);
+
+        // Get the index of next (if exists)
+        let next = self.traverse(pos, true);
+
+        // Get the index where prev->next is stored (or at start)
+        let prev_next = prev
+            .and_then(|p| Some(p + 1))
+            .unwrap_or_else(|| 0);
+
+        // Get the index where next->prev is stored (or at end)
+        let next_prev = next
+            .and_then(|n| Some(n - 1))
+            .unwrap_or_else(|| self.elements.len() - 1);
+
+        // Find the distance to jump from &prev->next to next (and &next->prev to prev)
+        let distance = next_prev - prev_next + 1;
+
+        // Update "pointers"
+        self.gaps[prev_next] = distance;
+        self.gaps[next_prev] = distance;
+
+        (prev, next)
+    }
 
     /*
      Traverse the sparse array from the current position in the forward or backwards direction.
+
      The index of the next element in that direction will be returned (if one exists).
     */
     fn traverse(&self, start: usize, forward: bool) -> Option<usize> {
@@ -61,29 +96,33 @@ impl <'a,T> SparseVector<T> {
         Some(new_pos)
     }
 
+    // Entry Management ///////////////////////////////////
+
     /*
      Get a cursor to traverse and modify sparse vector entries.
+     Will panic if not at least one element.
     */
     pub fn cursor(&'a mut self) -> SparseVectorCursor<'a, T> {
-        let pos = self.first_index();
+        let pos = self.first_index().expect("SparseVector is empty");
         SparseVectorCursor { vec:self, pos:pos }
     }
 
     /*
-     Get a vector of all existent elements.
+     Get a iterator over all existent elements.
     */
     pub fn iter(&'a self) -> SparseVectorIterator<'a,T> {
-        let pos = self.first_index();
-        SparseVectorIterator { vec:self, pos:Some(pos) }
+        SparseVectorIterator { vec:self, pos:self.first_index() }
     }
 
     // Elements ///////////////////////////////////////////
 
     /*
      Get the index of the first existent element.
+     Returns None if there are no elements.
     */
-    fn first_index(&self) -> usize {
-        self.gaps[0] // Gap between start and first
+    fn first_index(&self) -> Option<usize> {
+        let pos = self.gaps[0]; // Gap between start and first
+        if pos < self.elements.len() { Some(pos) } else { None }
     }
 }
 
@@ -155,18 +194,14 @@ impl <'a,T> SparseVectorCursor<'a,T> {
 
     fn move_cursor(&mut self, forward: bool) -> bool {
         let pos = self.traverse(forward);
-        if let Some(pos) = pos {
-            self.pos = pos;
-            return true
-        } else {
-            return false
-        }
+        if let Some(pos) = pos { self.pos = pos }
+        return pos.is_some()
     }
 
     /*
      Attempt to move the cursor to the previous element.
      Returns true, if the cursor was moved.
-             false, if there is no previous element.
+             false, if there is no previous element. Cursor is unchanged.
     */
     pub fn move_prev(&mut self) -> bool {
         self.move_cursor(false)
@@ -175,7 +210,7 @@ impl <'a,T> SparseVectorCursor<'a,T> {
     /*
      Attempt to move the cursor to the next element.
      Returns true, if the cursor was moved.
-             false, if there is no next element.
+             false, if there is no next element. Cursor is unchanged.
     */
     pub fn move_next(&mut self) -> bool {
         self.move_cursor(true)
@@ -184,53 +219,22 @@ impl <'a,T> SparseVectorCursor<'a,T> {
     // Delete /////////////////////////////////////////////
 
     /*
-     Mark the current element as removed, then update gap info.
-     The cursor will be in an invalid state until moved to one of the returned positions.
-     Algorithm is similar to removal and relinking in a doubly linked list.
-    */
-    fn remove_current(&mut self) -> (Option<usize>, Option<usize>) {
-
-        // Get the index of prev (if exists)
-        let prev = self.traverse(false);
-
-        // Get the index of next (if exists)
-        let next = self.traverse(true);
-
-        // Get the index where prev->next is stored (or at start)
-        let prev_next = prev
-            .and_then(|p| Some(p + 1))
-            .unwrap_or_else(|| 0);
-
-        // Get the index where next->prev is stored (or at end)
-        let next_prev = next
-            .and_then(|n| Some(n - 1))
-            .unwrap_or_else(|| self.vec.elements.len() - 1);
-
-        // Find the distance to jump from &prev->next to next (and &next->prev to prev)
-        let distance = next_prev - prev_next + 1;
-
-        // Update "pointers"
-        self.vec.gaps[prev_next] = distance;
-        self.vec.gaps[next_prev] = distance;
-
-        (prev, next)
-    }
-
-    /*
      Remove the element at the current position then try to move the cursor backwards.
      If there is no previous element, the cursor will move forwards instead.
+     Will panic if the last element is removed.
     */
     pub fn remove_then_prev(&mut self) {
-        let (prev, next) = self.remove_current();
+        let (prev, next) = self.vec.remove_at(self.pos);
         self.pos = prev.unwrap_or_else(|| next.unwrap());
     }
 
     /*
      Remove the element at the current position then try to move the cursor forwards.
      If there is no next element, the cursor will move backwards instead.
+     Will panic if the last element is removed.
     */
     pub fn remove_then_next(&mut self) {
-        let (prev, next) = self.remove_current();
+        let (prev, next) = self.vec.remove_at(self.pos);
         self.pos = next.unwrap_or_else(|| prev.unwrap());
     }
 }

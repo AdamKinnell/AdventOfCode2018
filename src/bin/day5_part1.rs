@@ -56,8 +56,8 @@ fn solve(polymer: &String) -> usize {
 
 /*
  Timings:
-    DEBUG: ~26ms
-    RELEASE: ~0.77ms
+    DEBUG: ~26.5ms
+    RELEASE: ~0.765ms
 */
 run!{
     input = "day5",
