@@ -169,6 +169,7 @@ impl <'a,T> SparseVectorCursor<'a,T> {
     /*
      Get the value at the current cursor position.
     */
+    #[allow(dead_code)]
     pub fn get(&'a self) -> &'a T {
         &self.vec.elements[self.pos]
     }
@@ -176,6 +177,7 @@ impl <'a,T> SparseVectorCursor<'a,T> {
     /*
      Get the mutable value at the current cursor position.
     */
+    #[allow(dead_code)]
     pub fn get_mut(&'a mut self) -> &'a mut T {
         &mut self.vec.elements[self.pos]
     }
@@ -203,6 +205,7 @@ impl <'a,T> SparseVectorCursor<'a,T> {
      Returns true, if the cursor was moved.
              false, if there is no previous element. Cursor is unchanged.
     */
+    #[allow(dead_code)]
     pub fn move_prev(&mut self) -> bool {
         self.move_cursor(false)
     }
@@ -212,6 +215,7 @@ impl <'a,T> SparseVectorCursor<'a,T> {
      Returns true, if the cursor was moved.
              false, if there is no next element. Cursor is unchanged.
     */
+    #[allow(dead_code)]
     pub fn move_next(&mut self) -> bool {
         self.move_cursor(true)
     }
@@ -223,6 +227,7 @@ impl <'a,T> SparseVectorCursor<'a,T> {
      If there is no previous element, the cursor will move forwards instead.
      Will panic if the last element is removed.
     */
+    #[allow(dead_code)]
     pub fn remove_then_prev(&mut self) {
         let (prev, next) = self.vec.remove_at(self.pos);
         self.pos = prev.unwrap_or_else(|| next.unwrap());
@@ -233,6 +238,7 @@ impl <'a,T> SparseVectorCursor<'a,T> {
      If there is no next element, the cursor will move backwards instead.
      Will panic if the last element is removed.
     */
+    #[allow(dead_code)]
     pub fn remove_then_next(&mut self) {
         let (prev, next) = self.vec.remove_at(self.pos);
         self.pos = next.unwrap_or_else(|| prev.unwrap());
