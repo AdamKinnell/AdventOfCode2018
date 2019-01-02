@@ -1,3 +1,50 @@
+
+// SparseVector ///////////////////////////////////////////////////////////////
+
+/*
+ A mutable view of a vector with elements missing.
+ Supports view, change, and remove via cursor. Does not support insertion.
+*/
+pub struct SparseVector<T> {
+    elements: Vec<T>,
+    gaps: Vec<usize>,
+}
+
+impl <'a,T> SparseVector<T> {
+
+    /*
+     Create a sparse representation from a vector of existent elements.
+    */
+    pub fn from_vec(vec: Vec<T>) -> SparseVector<T> {
+        assert!(vec.len() > 0);
+
+        let mut gaps = Vec::new();
+        gaps.resize(vec.len(), 0);
+
+        SparseVector { elements:vec, gaps:gaps }
+    }
+
+    /*
+     Get a cursor to traverse and modify sparse vector entries.
+    */
+    pub fn cursor(&'a mut self) -> SparseVectorCursor<'a, T> {
+        assert!(self.elements.len() > 0);
+        SparseVectorCursor::for_sparse_vec(self)
+    }
+
+    /*
+     Get a vector of all existent elements.
+    */
+    pub fn iter(&'a self) -> impl Iterator<Item=&T> {
+        self.elements.iter()
+            .zip(&self.gaps)
+            .filter(|(_, gap)| **gap == 0)
+            .map(|(elem,_)| elem)
+    }
+}
+
+// SparseVectorCursor /////////////////////////////////////////////////////////
+
 /*
  A movable cursor capable of traversing a SparseVector.
  Supports view, change, and remove.
@@ -149,47 +196,5 @@ impl <'a,T> SparseVectorCursor<'a,T> {
     pub fn remove_then_next(&mut self) {
         let (prev, next) = self.remove_current();
         self.pos = next.unwrap_or_else(|| prev.unwrap());
-    }
-}
-
-/*
- A mutable view of a vector with elements missing.
- Supports view, change, and remove via cursor. Does not support insertion.
-*/
-pub struct SparseVector<T> {
-    elements: Vec<T>,
-    gaps: Vec<usize>,
-}
-
-impl <'a,T> SparseVector<T> {
-
-    /*
-     Create a sparse representation from a vector of existent elements.
-    */
-    pub fn from_vec(vec: Vec<T>) -> SparseVector<T> {
-        assert!(vec.len() > 0);
-
-        let mut gaps = Vec::new();
-        gaps.resize(vec.len(), 0);
-
-        SparseVector { elements:vec, gaps:gaps }
-    }
-
-    /*
-     Get a cursor to traverse and modify sparse vector entries.
-    */
-    pub fn cursor(&'a mut self) -> SparseVectorCursor<'a, T> {
-        assert!(self.elements.len() > 0);
-        SparseVectorCursor::for_sparse_vec(self)
-    }
-
-    /*
-     Get a vector of all existent elements.
-    */
-    pub fn iter(&'a self) -> impl Iterator<Item=&T> {
-        self.elements.iter()
-            .zip(&self.gaps)
-            .filter(|(_, gap)| **gap == 0)
-            .map(|(elem,_)| elem)
     }
 }
