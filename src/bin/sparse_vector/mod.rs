@@ -24,22 +24,91 @@ impl <'a,T> SparseVector<T> {
         SparseVector { elements:vec, gaps:gaps }
     }
 
+    // Traversal //////////////////////////////////////////
+
+    /*
+     Traverse the sparse array from the current position in the forward or backwards direction.
+     The index of the next element in that direction will be returned (if one exists).
+    */
+    fn traverse(&self, start: usize, forward: bool) -> Option<usize> {
+
+        // Move to adjacent element position
+        // It may not exist sparsely, but must be within the vector bounds
+        let adj_pos = if forward {
+            if start == self.elements.len() - 1 { return None }
+            start + 1
+        } else {
+            if start == 0 { return None }
+            start - 1
+        };
+
+        // Find gap to next existent element (distance from new_pos)
+        let gap = self.gaps[adj_pos];
+
+        // Move to next existent element (If no gap, then move 0)
+        // Out of bounds means cannot move in that direction.
+        let new_pos = if forward {
+            if adj_pos + gap > self.elements.len() - 1 { return None };
+            adj_pos + gap
+        } else {
+            if gap > adj_pos { return None }
+            adj_pos - gap
+        };
+
+        // We must have landed on an existent element
+        if self.gaps[new_pos] != 0 { panic!("Traverse ended in gap") }
+
+        Some(new_pos)
+    }
+
     /*
      Get a cursor to traverse and modify sparse vector entries.
     */
     pub fn cursor(&'a mut self) -> SparseVectorCursor<'a, T> {
-        assert!(self.elements.len() > 0);
-        SparseVectorCursor::for_sparse_vec(self)
+        let pos = self.first_index();
+        SparseVectorCursor { vec:self, pos:pos }
     }
 
     /*
      Get a vector of all existent elements.
     */
-    pub fn iter(&'a self) -> impl Iterator<Item=&T> {
-        self.elements.iter()
-            .zip(&self.gaps)
-            .filter(|(_, gap)| **gap == 0)
-            .map(|(elem,_)| elem)
+    pub fn iter(&'a self) -> SparseVectorIterator<'a,T> {
+        let pos = self.first_index();
+        SparseVectorIterator { vec:self, pos:Some(pos) }
+    }
+
+    // Elements ///////////////////////////////////////////
+
+    /*
+     Get the index of the first existent element.
+    */
+    fn first_index(&self) -> usize {
+        self.gaps[0] // Gap between start and first
+    }
+}
+
+// SparseVectorIterator ///////////////////////////////////////////////////////
+
+/*
+ A forward iterator capable of traversing a SparseVector.
+*/
+pub struct SparseVectorIterator<'a,T> {
+    vec: &'a SparseVector<T>,
+    pos: Option<usize>,
+}
+
+impl <'a,T> Iterator for SparseVectorIterator<'a,T> {
+
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<&'a T> {
+        if let Some(pos) = self.pos {
+            let elem = &self.vec.elements[pos];
+            self.pos = self.vec.traverse(pos, true); // Next element
+            Some(elem)
+        } else {
+            None // End of iterator
+        }
     }
 }
 
@@ -55,12 +124,6 @@ pub struct SparseVectorCursor<'a, T> {
 }
 
 impl <'a,T> SparseVectorCursor<'a,T> {
-
-    fn for_sparse_vec(vec: &'a mut SparseVector<T>) -> SparseVectorCursor<'a,T> {
-        let first = vec.gaps[0];
-        assert!(first < vec.elements.len()); // At least one element
-        SparseVectorCursor { vec:vec, pos:first }
-    }
 
     // Get ////////////////////////////////////////////////
 
@@ -85,33 +148,7 @@ impl <'a,T> SparseVectorCursor<'a,T> {
      The index of the next existent element in that direction will be returned.
     */
     fn traverse(&self, forward: bool) -> Option<usize> {
-        // Move to adjacent element position
-        // It may not exist sparsely, but must be within the vector bounds
-        let adj_pos = if forward {
-            if self.pos == self.vec.elements.len() - 1 { return None }
-            self.pos + 1
-        } else {
-            if self.pos == 0 { return None }
-            self.pos - 1
-        };
-
-        // Find gap to next existent element (distance from new_pos)
-        let gap = self.vec.gaps[adj_pos];
-
-        // Move to next existent element (If no gap, then move 0)
-        // Out of bounds means cannot move in that direction.
-        let new_pos = if forward {
-            if adj_pos + gap > self.vec.elements.len() - 1 { return None };
-            adj_pos + gap
-        } else {
-            if gap > adj_pos { return None }
-            adj_pos - gap
-        };
-
-        // We must have landed on an existent element
-        if self.vec.gaps[new_pos] != 0 { panic!("Ended in gap") }
-
-        Some(new_pos)
+        self.vec.traverse(self.pos, forward)
     }
 
     // Move ///////////////////////////////////////////////
@@ -175,7 +212,6 @@ impl <'a,T> SparseVectorCursor<'a,T> {
         // Update "pointers"
         self.vec.gaps[prev_next] = distance;
         self.vec.gaps[next_prev] = distance;
-        self.vec.gaps[self.pos]  = distance; // Don't let it be 0 (helps debug gap placement)
 
         (prev, next)
     }

@@ -42,7 +42,7 @@ fn react(polymer: &String) -> String {
         }
     }
 
-    sparse_vec.iter().collect::<String>()
+    sparse_vec.iter().collect()
 }
 
 /*
@@ -56,8 +56,8 @@ fn solve(polymer: &String) -> usize {
 
 /*
  Timings:
-    DEBUG: ~28ms
-    RELEASE: ~0.87ms
+    DEBUG: ~26ms
+    RELEASE: ~0.77ms
 */
 run!{
     input = "day5",
