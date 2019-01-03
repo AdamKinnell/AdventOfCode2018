@@ -68,9 +68,12 @@ fn solve(polymer: &String) -> (usize, char) {
         .dedup()
         .collect::<Vec<char>>();
 
+    // Perform initial reaction
+    let polymer = react(polymer);
+
     // React polymers without each unit type
     let polymers = unit_types.iter()
-        .map(|c| remove_unit_type(polymer, *c))
+        .map(|c| remove_unit_type(&polymer, *c))
         .map(|p| react(&p));
 
     // Find shortest polymer
@@ -87,8 +90,8 @@ fn solve(polymer: &String) -> (usize, char) {
 
 /*
  Timings:
-    DEBUG: ~495ms
-    RELEASE: ~9.86ms
+    DEBUG: ~168ms
+    RELEASE: ~3.5ms
 */
 run!{
     input = "day5",
