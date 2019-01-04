@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 // Types //////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 struct Point {
     x: i32,
     y: i32,
@@ -67,8 +67,6 @@ fn find_boundaries(points: &Vec<Point>) -> Rect {
         to: Point { x:max_x, y:max_y },
     }
 }
-
-
 
 /*
  Find the point in <to_options> which is closest to <from>.
