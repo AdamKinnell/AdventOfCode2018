@@ -93,8 +93,7 @@ fn closest_point(from: Point, to_options: &Vec<Point>) -> Option<usize> {
  Find the size of the area owned by each point.
 
  Infinite areas will be marked with a negative number.
- Any area touching the edge of the grid will be *assumed* infinite.
- Works well enough for the provided input.
+ Any area touching the edge of the grid will extend infinitely.
 */
 fn find_owned_area_sizes(points: &Vec<Point>) -> Vec<i32> {
 
