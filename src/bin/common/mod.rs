@@ -49,7 +49,7 @@ macro_rules! run {
             let mut criterion = criterion::Criterion::default()
                 .warm_up_time(std::time::Duration::new(2,0))
                 .measurement_time(std::time::Duration::new(5, 0))
-                .sample_size(25)
+                .sample_size(10)
                 .configure_from_args();
 
             criterion.bench_function(file!(), move |b| {
