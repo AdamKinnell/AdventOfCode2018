@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 // Types //////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq )]
 struct Point {
     x: i32,
     y: i32,
@@ -93,7 +93,8 @@ fn closest_point(from: Point, to_options: &Vec<Point>) -> Option<usize> {
  Find the size of the area owned by each point.
 
  Infinite areas will be marked with a negative number.
- Any area touching the edge of the grid will be infinite (under manhattan distance)
+ Any area touching the edge of the grid will be *assumed* infinite.
+ Works well enough for the provided input.
 */
 fn find_owned_area_sizes(points: &Vec<Point>) -> Vec<i32> {
 
@@ -119,25 +120,50 @@ fn find_owned_area_sizes(points: &Vec<Point>) -> Vec<i32> {
 }
 
 /*
+ Print a visual map of which coordinates are owned by each point.
+*/
+fn print_ownership_map(points: &Vec<Point>) {
+    let bound = find_boundaries(&points);
+
+    println!("Grid:");
+    bound.for_each_coordinate(&mut |point| {
+        if point.x == bound.from.x { println!() }
+        if let Some(owner) = closest_point(point, &points) {
+            if point == points[owner] {
+                print!("O,") // Mark owning point
+            } else {
+                print!("{},", owner) // Owned
+            }
+
+        } else {
+            print!(".,") // Contested
+        }
+    });
+}
+
+/*
  Find the largest non-infinite owned area.
 */
-fn solve(points: Vec<String>) -> (Point, usize) {
+fn solve(points: Vec<String>) -> (Point, usize, usize) {
 
     // Parse points
     let points = points.iter()
         .map(Point::parse)
         .collect::<Vec<Point>>();
 
+    // Print map to stdout
+    //print_ownership_map(&points);
+
     // Attribute coordinates to owning points
     let owned = find_owned_area_sizes(&points);
 
     // Find point with largest owned area
-    let (owner, area) = points.iter()
-        .zip(owned)
-        .max_by_key(|(_,a)| *a)
+    let (owner_p, (owner_i, area)) = points.iter()
+        .zip(owned.iter().enumerate())
+        .max_by_key(|(_,(_,a))| *a)
         .unwrap();
 
-    (*owner, area as usize)
+    (*owner_p, owner_i, *area as usize)
 }
 
 // Entry Point ////////////////////////////////////////////////////////////////
@@ -150,11 +176,11 @@ fn solve(points: Vec<String>) -> (Point, usize) {
 run! {
     input = "day6",
     run = |input: &Input| {
-        let (point, largest_area) = solve(input.to_lines());
+        let (owner_p, owner_i, largest_area) = solve(input.to_lines());
 
         assert_eq!(largest_area, 4398);
 
-        println!("Point with largest area: {},{}", point.x, point.y);
+        println!("Point with largest area: #{} ({},{})", owner_i, owner_p.x, owner_p.y);
         println!("Largest Area: {}", largest_area);
     },
     bench = |input: &Input| {
