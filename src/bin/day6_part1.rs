@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 // Types //////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 struct Point {
     x: i32,
     y: i32,
@@ -34,6 +34,23 @@ struct Rect {
     to: Point,
 }
 
+impl Rect {
+
+    fn for_each_coordinate(&self, f: &mut FnMut(Point)) {
+        'row: for y in (self.from.y)..=(self.to.y) {
+            'col: for x in (self.from.x)..=(self.to.x) {
+                f(Point { x:x as i32, y:y as i32 })
+            }
+        }
+    }
+
+    fn is_on_boundary(&self, point: &Point) -> bool {
+        let x_bound = point.x == self.from.x || point.x == self.to.x;
+        let y_bound = point.y == self.from.y || point.y == self.to.y;
+        x_bound || y_bound
+    }
+}
+
 // Functions //////////////////////////////////////////////////////////////////
 
 /*
@@ -51,14 +68,7 @@ fn find_boundaries(points: &Vec<Point>) -> Rect {
     }
 }
 
-/*
- Check if a point is on the edge of a rectangle.
-*/
-fn is_on_boundary(point: &Point, rect: &Rect) -> bool {
-    let x_bound = point.x == rect.from.x || point.x == rect.to.x;
-    let y_bound = point.y == rect.from.y || point.y == rect.to.y;
-    x_bound || y_bound
-}
+
 
 /*
  Find the point in <to_options> which is closest to <from>.
@@ -93,29 +103,19 @@ fn find_owned_area_sizes(points: &Vec<Point>) -> Vec<i32> {
     let mut owned_area = Vec::new();
     owned_area.resize(points.len(), 0);
 
-    // For each coordinate within bounding box
-    'row: for y in (bound.from.y)..=(bound.to.y) {
-        'col: for x in (bound.from.x)..=(bound.to.x) {
-
-            // Find "owner" of this coordinate (closest point)
-            let this = Point { x:x as i32, y:y as i32 };
-            let closest = closest_point(this, &points);
-            if closest.is_none() { continue } // Tied for ownership
-
-            if let Some(owner) = closest {
-                if is_on_boundary(&this, &bound) {
-                    // Area infinite; Effectively remove this owner from future consideration
-                    owned_area[owner] = std::i32::MIN;
-                } else {
-                    // Assign coordinate to owner
-                    owned_area[owner] += 1;
-                }
+    bound.for_each_coordinate(&mut |point| {
+        if let Some(owner) = closest_point(point, &points) {
+            if bound.is_on_boundary(&point) {
+                // Area infinite; Effectively remove this owner from future consideration
+                owned_area[owner] = std::i32::MIN;
             } else {
-                // Tie for closest
-                continue
+                // Assign coordinate to owner
+                owned_area[owner] += 1;
             }
+        } else {
+            // Tie for closest
         }
-    }
+    });
 
     owned_area
 }
