@@ -5,8 +5,6 @@ use itertools::Itertools;
 
 // Types //////////////////////////////////////////////////////////////////////
 
-type Grid = [[i8; 1000]; 1000];
-
 #[derive(Copy, Clone)]
 struct Point {
     x: i32,
@@ -30,86 +28,126 @@ impl Point {
     }
 }
 
+#[derive(Copy, Clone)]
+struct Rect {
+    from: Point,
+    to: Point,
+}
+
 // Functions //////////////////////////////////////////////////////////////////
 
 /*
-
+ Find a bounding rectangle which can fit all given points.
 */
-fn mark_closest(points: &Vec<Point>, grid: &mut Grid) {
+fn find_boundaries(points: &Vec<Point>) -> Rect {
+    let min_x = points.iter().map(|p| p.x).min().unwrap();
+    let min_y = points.iter().map(|p| p.y).min().unwrap();
+    let max_x = points.iter().map(|p| p.x).max().unwrap();
+    let max_y = points.iter().map(|p| p.y).max().unwrap();
 
-    // For each coordinate on grid
-    'row: for y in 0..(grid.len()) {
-        'col: for x in 0..(grid[0].len()) {
-
-            // Find distances to each point
-            let this = Point { x:x as i32, y:y as i32};
-            let mut distances = points.iter()
-                .enumerate()
-                .map(|(i,p)| (i, p.dist(&this)))
-                .sorted_by(|(_,d1),(_,d2)| d1.cmp(d2));
-
-            // Find closest point
-            let closest = distances.next().unwrap();
-            let next_closest = distances.next().unwrap();
-            if closest.1 == next_closest.1 {
-                // Tie for closest point
-                grid[y][x] = -1 as i8;
-            } else {
-                // Mark closest point
-                grid[y][x] = closest.0 as i8;
-            }
-        }
+    Rect {
+        from: Point { x:min_x, y:min_y },
+        to: Point { x:max_x, y:max_y },
     }
 }
 
 /*
-
+ Check if a point is on the edge of a rectangle.
 */
-fn find_largest_area(points: &Vec<Point>, grid: &Grid) -> (Point, usize) {
-    let mut owned = std::collections::HashMap::new();
+fn is_on_boundary(point: &Point, rect: &Rect) -> bool {
+    let x_bound = point.x == rect.from.x || point.x == rect.to.x;
+    let y_bound = point.y == rect.from.y || point.y == rect.to.y;
+    x_bound || y_bound
+}
 
-    // Count "owned" coordinates for each point
-    'row: for y in 0..(grid.len()) {
-        'col: for x in 0..(grid[0].len()) {
+/*
+ Find the point in <to_options> which is closest to <from>.
+ Returns None if there is a tie, or the index of the closest point in <to_options>.
+*/
+fn closest_point(from: Point, to_options: &Vec<Point>) -> Option<usize> {
+    // Find distances to each point
+    let mut distances = to_options.iter()
+        .enumerate()
+        .map(|(i,p)| (i, p.dist(&from)))
+        .sorted_by_key(|(_,d)| *d);
 
-            // Increment owned count
-            let owner = grid[y as usize][x as usize];
-            *owned.entry(owner).or_insert(0) += 1;
+    // Find closest point
+    let closest = distances.next().unwrap();
+    let next_closest = distances.next().unwrap();
+    if closest.1 == next_closest.1 {
+        None // Tie
+    } else {
+        Some(closest.0)
+    }
+}
 
-            // Ignore owner completely if they own an infinite area
-            // Any area touching the edge of the grid will be infinite (under manhattan dist)
-            if [0,grid.len()-1].contains(&y) || [0, grid[0].len()-1].contains(&x) {
-                // Effectively remove this owner from future consideration
-                owned.insert(owner, std::i32::MIN);
+/*
+ Find the size of the area owned by each point.
+
+ Infinite areas will be marked with a negative number.
+ Any area touching the edge of the grid will be infinite (under manhattan distance)
+*/
+fn find_owned_area_sizes(points: &Vec<Point>) -> Vec<i32> {
+
+    let bound = find_boundaries(&points);
+    let mut owned_area = Vec::new();
+    owned_area.resize(points.len(), 0);
+
+    // For each coordinate within bounding box
+    'row: for y in (bound.from.y)..=(bound.to.y) {
+        'col: for x in (bound.from.x)..=(bound.to.x) {
+
+            // Find "owner" of this coordinate (closest point)
+            let this = Point { x:x as i32, y:y as i32 };
+            let closest = closest_point(this, &points);
+            if closest.is_none() { continue } // Tied for ownership
+
+            if let Some(owner) = closest {
+                if is_on_boundary(&this, &bound) {
+                    // Area infinite; Effectively remove this owner from future consideration
+                    owned_area[owner] = std::i32::MIN;
+                } else {
+                    // Assign coordinate to owner
+                    owned_area[owner] += 1;
+                }
+            } else {
+                // Tie for closest
+                continue
             }
         }
     }
 
-    // Find point with largest owned area
-    let (i, area) = owned.iter()
-        .max_by(|a,b| a.1.cmp(b.1))
-        .unwrap();
-
-    (points[*i as usize], *area as usize)
+    owned_area
 }
 
+/*
+ Find the largest non-infinite owned area.
+*/
 fn solve(points: Vec<String>) -> (Point, usize) {
 
+    // Parse points
     let points = points.iter()
         .map(Point::parse)
         .collect::<Vec<Point>>();
 
-    let mut grid= [[-1; 1000]; 1000];
-    mark_closest(&points, &mut grid);
-    find_largest_area(&points, &grid)
+    // Attribute coordinates to owning points
+    let owned = find_owned_area_sizes(&points);
+
+    // Find point with largest owned area
+    let (owner, area) = points.iter()
+        .zip(owned)
+        .max_by_key(|(_,a)| *a)
+        .unwrap();
+
+    (*owner, area as usize)
 }
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
 /*
  Timings:
-    DEBUG: ~29s
-    RELEASE: ~890ms
+    DEBUG: ~2.6s
+    RELEASE: ~96.8ms
 */
 run! {
     input = "day6",
