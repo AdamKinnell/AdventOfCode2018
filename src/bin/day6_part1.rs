@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 // Types //////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, PartialEq )]
+#[derive(Copy, Clone, PartialEq)]
 struct Point {
     x: i32,
     y: i32,
