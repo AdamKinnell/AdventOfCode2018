@@ -114,6 +114,29 @@ impl MarbleNode {
         node
     }
 
+    /*
+     Destroy all connected nodes and free memory.
+    */
+    fn destroy_all(node: Rc<RefCell<MarbleNode>>) {
+        let mut node = node.clone();
+        loop {
+            let next = {
+                node.borrow().clockwise.clone()
+            };
+
+            // Unlink node
+            node.borrow_mut().clockwise = None;
+            node.borrow_mut().counter_clockwise = None;
+
+            if let Some(ref next) = next {
+                // Move to next node
+                node = next.clone();
+            } else {
+                // Back at start
+                return;
+            }
+        }
+    }
 }
 
 // Functions //////////////////////////////////////////////////////////////////
@@ -126,6 +149,7 @@ fn play(players: usize, marbles: usize) -> usize {
     let mut player_scores = Vec::new();
     player_scores.resize(players, 0);
 
+    // Play all marbles
     let mut current_player = 0;
     for next_marble in 1..marbles {
 
@@ -145,6 +169,9 @@ fn play(players: usize, marbles: usize) -> usize {
         current_player = (current_player + 1) % players;
     }
 
+    // Cleanup
+    MarbleNode::destroy_all(current_marble);
+
     *player_scores.iter().max().unwrap()
 }
 
@@ -152,8 +179,8 @@ fn play(players: usize, marbles: usize) -> usize {
 
 /*
  Timings:
-    DEBUG: ~118ms
-    RELEASE: ~5.7ms
+    DEBUG: ~17.5s
+    RELEASE: ~955ms
 */
 run! {
     input = "day9",
@@ -162,12 +189,12 @@ run! {
         assert_eq!(winning_score_a, 436720);
         println!("Winning Score A: {}", winning_score_a);
 
-        //let winning_score_b = play(416, (71617*100) + 1);
-        //assert_eq!(winning_score_b, 3527845091);
-        //println!("Winning Score B: {}", winning_score_b);
+        let winning_score_b = play(416, (71617*100) + 1);
+        assert_eq!(winning_score_b, 3527845091);
+        println!("Winning Score B: {}", winning_score_b);
     },
     bench = |_: &Input| {
-        //play(416, 71617 + 1);
-        //play(416, (71617*100) + 1);
+        play(416, 71617 + 1);
+        play(416, (71617*100) + 1);
     }
 }
