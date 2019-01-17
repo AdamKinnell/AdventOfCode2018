@@ -1,4 +1,9 @@
+#[macro_use] mod common;
+use self::common::*;
+
 use itertools::Itertools;
+
+// Functions //////////////////////////////////////////////////////////////////
 
 /*
  Check if two strings differ by exactly one character.
@@ -10,19 +15,7 @@ fn differs_by_exactly_one(a: &String, b: &String) -> bool {
         .count() == 1
 }
 
-/*
- Read lines from a file.
-*/
-fn get_input(path:&str) -> Vec<String> {
-    std::fs::read_to_string(path)
-        .unwrap()
-        .lines()
-        .map(String::from)
-        .collect()
-}
-
-fn main() {
-    let box_ids = get_input("res/input/day2.txt");
+fn solve(box_ids: &Vec<String>) -> (String, String, String) {
 
     // Find pair
     let (a,b) = box_ids.iter()
@@ -37,9 +30,31 @@ fn main() {
         .map(|(c, _)| c)
         .collect();
 
-    // Print answer
-    println!("Found two strings differing by exactly one character:");
-    println!("a: {}", a); // agi r mdjvlhedpsyoqfzuknpjwt
-    println!("b: {}", b); // agi t mdjvlhedpsyoqfzuknpjwt
-    println!("common: {}", common) // agimdjvlhedpsyoqfzuknpjwt
+    (a.clone(), b.clone(), common)
+}
+
+// Entry Point ////////////////////////////////////////////////////////////////
+
+/*
+ Timings:
+    DEBUG: ~149ms
+    RELEASE: ~4.17ms
+*/
+run! {
+    input = "day2",
+    run = |input: &Input| {
+        let (a,b,common) = solve(&input.to_lines());
+
+        assert_eq!(a, "agirmdjvlhedpsyoqfzuknpjwt");
+        assert_eq!(b, "agitmdjvlhedpsyoqfzuknpjwt");
+        assert_eq!(common, "agimdjvlhedpsyoqfzuknpjwt");
+
+        println!("Found two strings differing by exactly one character:");
+        println!("a: {}", a);
+        println!("b: {}", b);
+        println!("common: {}", common)
+    },
+    bench = |input: &Input| {
+        solve(&input.to_lines())
+    }
 }

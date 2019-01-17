@@ -1,4 +1,9 @@
+#[macro_use] mod common;
+use self::common::*;
+
 use itertools::Itertools;
+
+// Functions //////////////////////////////////////////////////////////////////
 
 fn has_n_repetitions(n: i32, s: &str) -> bool {
     s.chars()
@@ -29,18 +34,19 @@ fn checksum_boxes(box_ids: Vec<String>) -> i32 {
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
-fn get_input(path:&str) -> Vec<String> {
-    std::fs::read_to_string(path)
-        .unwrap()
-        .lines()
-        .map(String::from)
-        .collect()
-}
-
-fn main() {
-    let box_ids = get_input("res/input/day2.txt");
-    let checksum = checksum_boxes(box_ids);
-
-    println!("Checksum: {}", checksum);
-    // Checksum: 5434
+/*
+ Timings:
+    DEBUG: ~13.34ms
+    RELEASE: ~518us
+*/
+run! {
+    input = "day2",
+    run = |input: &Input| {
+        let checksum = checksum_boxes(input.to_lines());
+        assert_eq!(checksum, 5434);
+        println!("Checksum: {}", checksum);
+    },
+    bench = |input: &Input| {
+        checksum_boxes(input.to_lines())
+    }
 }

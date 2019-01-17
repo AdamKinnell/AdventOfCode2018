@@ -1,3 +1,7 @@
+#[macro_use] mod common;
+use self::common::*;
+
+// Functions //////////////////////////////////////////////////////////////////
 
 /*
  Compare two strings while ignoring the character at the specified index.
@@ -90,22 +94,32 @@ fn common_chars(a: &String, b: &String) -> String {
 
 // Entry Point ////////////////////////////////////////////////////////////////
 
-fn get_input(path:&str) -> Vec<String> {
-    std::fs::read_to_string(path)
-        .unwrap()
-        .lines()
-        .map(String::from)
-        .collect()
-}
-
-fn main() {
-    let box_ids = get_input("res/input/day2.txt");
+fn solve(box_ids: &Vec<String>) -> (String, String, String) {
     let (a,b) = find_differing_by_one(&box_ids);
     let common = common_chars(&a, &b);
+    (a, b, common)
+}
 
-    println!("Found two strings differing by exactly one character:");
-    println!("a: {}", a); // agirmdjvlhedpsyoqfzuknpjwt
-    println!("b: {}", b); // agitmdjvlhedpsyoqfzuknpjwt
-                          //    ^
-    println!("common: {}", common) // agimdjvlhedpsyoqfzuknpjwt
+/*
+ Timings:
+    DEBUG: ~10.8ms
+    RELEASE: ~263us
+*/
+run! {
+    input = "day2",
+    run = |input: &Input| {
+        let (a,b,common) = solve(&input.to_lines());
+
+        assert_eq!(a, "agirmdjvlhedpsyoqfzuknpjwt");
+        assert_eq!(b, "agitmdjvlhedpsyoqfzuknpjwt");
+        assert_eq!(common, "agimdjvlhedpsyoqfzuknpjwt");
+
+        println!("Found two strings differing by exactly one character:");
+        println!("a: {}", a);
+        println!("b: {}", b);
+        println!("common: {}", common)
+    },
+    bench = |input: &Input| {
+        solve(&input.to_lines())
+    }
 }
