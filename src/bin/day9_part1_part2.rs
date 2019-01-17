@@ -20,15 +20,18 @@ impl MarbleCircleCursor {
     /*
      Create a new marble circle starting at the specified marble.
     */
-    fn new(value: usize) -> MarbleCircleCursor {
+    fn new(value: usize, reserve: usize) -> MarbleCircleCursor {
         let node = MarbleNode {
             value: value,
             clockwise_i: 0,
             counterclockwise_i: 0,
         };
 
+        let mut marbles = vec![node];
+        marbles.reserve(reserve - 1);
+
         MarbleCircleCursor {
-            marbles: vec![node],
+            marbles: marbles,
             position: 0,
         }
     }
@@ -112,7 +115,7 @@ impl MarbleCircleCursor {
  Play an elf marble game until completion.
 */
 fn play(players: usize, marbles: usize) -> usize {
-    let mut marble_cursor = MarbleCircleCursor::new(0);
+    let mut marble_cursor = MarbleCircleCursor::new(0, marbles + 1);
     let mut player_scores = Vec::new();
     player_scores.resize(players, 0);
 
@@ -143,8 +146,8 @@ fn play(players: usize, marbles: usize) -> usize {
 
 /*
  Timings:
-    DEBUG: ~2.05s
-    RELEASE: ~167ms
+    DEBUG: ~1.97s
+    RELEASE: ~110ms
 */
 run! {
     input = "day9",
