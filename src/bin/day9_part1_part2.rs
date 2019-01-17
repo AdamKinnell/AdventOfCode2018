@@ -1,141 +1,108 @@
 #[macro_use] mod common;
 use self::common::*;
 
-use std::rc::Rc;
-use std::cell::RefCell;
-
 // Types //////////////////////////////////////////////////////////////////////
 
 struct MarbleNode {
     value: usize,
-    clockwise: Option<Rc<RefCell<MarbleNode>>>,
-    counter_clockwise: Option<Rc<RefCell<MarbleNode>>>,
+    clockwise_i: usize,
+    counterclockwise_i: usize,
 }
 
-impl MarbleNode {
+struct  MarbleCircleCursor {
+    marbles: Vec<MarbleNode>,
+    position: usize,
+}
+
+
+impl MarbleCircleCursor {
 
     /*
-     Create a standalone marble.
+     Create a new marble circle starting at the specified marble.
     */
-    fn create_first(value: usize) -> Rc<RefCell<MarbleNode>> {
-
-        // Create node
-        let marble = MarbleNode {
+    fn new(value: usize) -> MarbleCircleCursor {
+        let node = MarbleNode {
             value: value,
-            clockwise: None,
-            counter_clockwise: None
+            clockwise_i: 0,
+            counterclockwise_i: 0,
         };
-        let marble_ref = Rc::new(RefCell::new(marble));
 
-        // Link to self
-        marble_ref.borrow_mut().clockwise = Some(marble_ref.clone());
-        marble_ref.borrow_mut().counter_clockwise = Some(marble_ref.clone());
-
-        marble_ref
+        MarbleCircleCursor {
+            marbles: vec![node],
+            position: 0,
+        }
     }
 
     /*
-     Delete this marble node, and return the next node clockwise.
+     Delete this marble node, and move to the next node clockwise.
+     Must not be the only node.
     */
-    fn remove_then_clockwise(node: Rc<RefCell<MarbleNode>>) -> Rc<RefCell<MarbleNode>> {
+    fn remove_then_clockwise(&mut self) {
+        let node = &self.marbles[self.position];
+        let clockwise_i = node.clockwise_i;
+        let counterclockwise_i = node.counterclockwise_i;
 
-        let clockwise = node.borrow().clockwise.clone();
-        let counter_clockwise = node.borrow().counter_clockwise.clone();
+        // Fix up pointers
+        let counterclockwise = &mut self.marbles[counterclockwise_i];
+        counterclockwise.clockwise_i = clockwise_i;
 
-        // Fix up neighbor link: [CCW] -> [CW]
-        if let Some(ref counter_clockwise) = counter_clockwise {
-            counter_clockwise.borrow_mut().clockwise = clockwise.clone()
-        }
+        let clockwise = &mut self.marbles[clockwise_i];
+        clockwise.counterclockwise_i = counterclockwise_i;
 
-        // Fix up neighbor link: [CCW] <- [CW]
-        if let Some(ref clockwise) = clockwise {
-            clockwise.borrow_mut().counter_clockwise = counter_clockwise.clone()
-        }
-
-        // Remove references preventing deallocation
-        node.borrow_mut().clockwise = None;
-        node.borrow_mut().counter_clockwise = None;
-
-        // All done: [CCW] <-> [CW]
-        clockwise.as_ref().unwrap().clone()
+        // Advance clockwise
+        self.position = clockwise_i;
     }
 
     /*
      Insert a new marble in the clockwise direction.
     */
-    fn insert_clockwise(node: Rc<RefCell<MarbleNode>>, value: usize) -> Rc<RefCell<MarbleNode>> {
+    fn insert_clockwise(&mut self, value: usize) {
+        let clockwise_i = self.marbles[self.position].clockwise_i;
+        let counterclockwise_i = self.position;
 
-        let clockwise = node.borrow().clockwise.as_ref().unwrap().clone();
-        let counterclockwise = node.clone();
-
-        // Create node: [CCW] <- [New] -> [CW]
-        let middle = MarbleNode {
+        // Create node
+        let node = MarbleNode {
             value: value,
-            clockwise: Some(clockwise.clone()),
-            counter_clockwise: Some(counterclockwise.clone())
+            clockwise_i: clockwise_i,
+            counterclockwise_i: counterclockwise_i,
         };
-        let middle_ref = Rc::new(RefCell::new(middle));
+        self.marbles.push(node);
+        let middle_i = self.marbles.len() - 1;
 
-        // Fix up neighbor link: [CCW] -> [New]
-        counterclockwise.borrow_mut().clockwise = Some(middle_ref.clone());
+        // Fix up pointers
+        let counterclockwise = &mut self.marbles[counterclockwise_i];
+        counterclockwise.clockwise_i = middle_i;
 
-        // Fix up neighbor link: [New] <- [CW]
-        clockwise.borrow_mut().counter_clockwise = Some(middle_ref.clone());
+        let clockwise = &mut self.marbles[clockwise_i];
+        clockwise.counterclockwise_i = middle_i;
 
-        // All done: [CCW] <-> [New] <-> [CW]
-        middle_ref
+        // Advance clockwise
+        self.position = middle_i
     }
 
     /*
-     Get the marble clockwise n spaces.
+     Move the cursor to point to the marble clockwise n spaces.
     */
-    fn move_clockwise(node: Rc<RefCell<MarbleNode>>, num: usize) -> Rc<RefCell<MarbleNode>> {
-        let mut node = node.clone();
+    fn move_clockwise(&mut self, num: usize) {
         for _ in 0..num {
-            node = {
-                let borrowed = node.borrow();
-                borrowed.clockwise.as_ref().unwrap().clone()
-            }
+            self.position = self.marbles[self.position].clockwise_i
         }
-        node
     }
 
     /*
-     Get the marble counterclockwise n spaces.
+     Move the cursor to point to the marble counter-clockwise n spaces.
     */
-    fn move_counterclockwise(node: Rc<RefCell<MarbleNode>>, num: usize) -> Rc<RefCell<MarbleNode>> {
-        let mut node = node.clone();
+    fn move_counterclockwise(&mut self, num: usize) {
         for _ in 0..num {
-            node = {
-                let borrowed = node.borrow();
-                borrowed.counter_clockwise.as_ref().unwrap().clone()
-            }
+            self.position = self.marbles[self.position].counterclockwise_i
         }
-        node
     }
 
     /*
-     Destroy all connected nodes and free memory.
+     Get the value of the current marble under the cursor.
     */
-    fn destroy_all(node: Rc<RefCell<MarbleNode>>) {
-        let mut node = node.clone();
-        loop {
-            let next = {
-                node.borrow().clockwise.clone()
-            };
-
-            // Unlink node
-            node.borrow_mut().clockwise = None;
-            node.borrow_mut().counter_clockwise = None;
-
-            if let Some(ref next) = next {
-                // Move to next node
-                node = next.clone();
-            } else {
-                // Back at start
-                return;
-            }
-        }
+    fn get(&self) -> usize {
+        self.marbles[self.position].value
     }
 }
 
@@ -145,7 +112,7 @@ impl MarbleNode {
  Play an elf marble game until completion.
 */
 fn play(players: usize, marbles: usize) -> usize {
-    let mut current_marble = MarbleNode::create_first(0);
+    let mut marble_cursor = MarbleCircleCursor::new(0);
     let mut player_scores = Vec::new();
     player_scores.resize(players, 0);
 
@@ -156,21 +123,18 @@ fn play(players: usize, marbles: usize) -> usize {
         // Take turn
         if next_marble % 23 == 0 {
             player_scores[current_player] += next_marble;
-            current_marble = MarbleNode::move_counterclockwise(current_marble, 7);
-            player_scores[current_player] += current_marble.borrow().value;
-            current_marble = MarbleNode::remove_then_clockwise(current_marble);
+            marble_cursor.move_counterclockwise(7);
+            player_scores[current_player] += marble_cursor.get();
+            marble_cursor.remove_then_clockwise();
         } else {
             // Insert marble between marbles 1 and 2 clockwise
-            current_marble = MarbleNode::move_clockwise(current_marble, 1);
-            current_marble = MarbleNode::insert_clockwise(current_marble, next_marble);
+            marble_cursor.move_clockwise(1);
+            marble_cursor.insert_clockwise(next_marble);
         }
 
         // Next player
         current_player = (current_player + 1) % players;
     }
-
-    // Cleanup
-    MarbleNode::destroy_all(current_marble);
 
     *player_scores.iter().max().unwrap()
 }
@@ -179,8 +143,8 @@ fn play(players: usize, marbles: usize) -> usize {
 
 /*
  Timings:
-    DEBUG: ~17.5s
-    RELEASE: ~955ms
+    DEBUG: ~2.05s
+    RELEASE: ~167ms
 */
 run! {
     input = "day9",
