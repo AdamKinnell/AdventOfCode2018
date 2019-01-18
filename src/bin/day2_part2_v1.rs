@@ -9,8 +9,6 @@ use self::common::*;
  https://cs.stackexchange.com/a/93576
 */
 fn compare_ignoring_i(a: &String, b: &String, ignore_i: usize) -> std::cmp::Ordering {
-
-
     let pairs = a.chars().zip(b.chars());
 
     for (i, (ac, bc)) in pairs.enumerate() {
