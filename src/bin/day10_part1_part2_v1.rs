@@ -89,9 +89,7 @@ impl Rect {
  Lower numbers mean the points are closer together.
 */
 fn calculate_distance_hint(points: &Vec<Point>) -> usize {
-    points.windows(2)
-        .map(|pair| pair[0].dist(&pair[1]) as usize)
-        .sum()
+    find_boundary(&points).area()
 }
 
 /*
@@ -172,8 +170,8 @@ fn solve(points: &Vec<String>) -> (i32, String) {
 
 /*
  Timings:
-    DEBUG: ~671ms
-    RELEASE: ~7.0ms
+    DEBUG: ~848ms
+    RELEASE: ~6.18ms
 */
 run! {
     input = "day10",
