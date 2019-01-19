@@ -2,7 +2,6 @@
 use self::common::*;
 
 use regex::*;
-use itertools::*;
 use lazy_static::*;
 
 // Types //////////////////////////////////////////////////////////////////////
@@ -60,14 +59,6 @@ impl Point {
         let offset_y = self.velocity.y * time_steps;
         self.position.x += offset_x;
         self.position.y += offset_y;
-    }
-
-    /*
-     Move the position of the point forward in time by one step.
-    */
-    fn time_inc(&mut self) {
-        self.position.x += self.velocity.x;
-        self.position.y += self.velocity.y;
     }
 }
 
