@@ -143,23 +143,33 @@ fn solve(points: &Vec<String>) -> (i32, String) {
         .map(Point::parse)
         .collect::<Vec<Point>>();
 
-    // Find timestamp
-    let mut time = 0;
-    let mut minimal = std::usize::MAX;
+    // Find timestamp (minimum of unimodal function calculate_distance_hint())
+    let mut time = 0;             // Current time
+    let mut step = 1024;          // Time step each iteration
+    let mut last = std::usize::MAX;;   // Last value
     loop {
+        // Step through time
+        time += step;
+        points.iter_mut().for_each(|p| p.time_offset(step));
         let distance_hint = calculate_distance_hint(&points);
-        if distance_hint < minimal {
-            // Points are still converging
-            minimal = distance_hint;
-            points.iter_mut().for_each(|p| p.time_offset(1));
-            time += 1;
 
-        } else {
-            // Points are moving away now
-            points.iter_mut().for_each(|p| p.time_offset(-1));
-            time -= 1;
-            break
+        // Where do we go next?
+        if distance_hint < last {
+            // Points are converging in this direction=
+        } else if distance_hint > last {
+            // Points are diverging now, let's go back the other way
+            if (step.abs() == 1) {
+                // We only just passed it
+                time += -step;
+                points.iter_mut().for_each(|p| p.time_offset(-step));
+                break;
+            }
+
+            step = -step / 2
         }
+
+        // Remember last
+        last = distance_hint;
     }
 
     // Read message
@@ -170,8 +180,8 @@ fn solve(points: &Vec<String>) -> (i32, String) {
 
 /*
  Timings:
-    DEBUG: ~848ms
-    RELEASE: ~6.18ms
+    DEBUG: ~14.6ms
+    RELEASE: ~292us
 */
 run! {
     input = "day10",
