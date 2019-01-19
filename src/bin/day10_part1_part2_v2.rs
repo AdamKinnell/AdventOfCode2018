@@ -121,7 +121,7 @@ fn find_boundary(points: &Vec<Point>) -> Rect {
 
 /*
  Convert the relative positions of each point into a multi-line string.
- A '#' indicates
+ A '#' indicates the presence of a point, while a '.' indicates the absence of any point.
 */
 fn stringify_points(points: &Vec<Point>,) -> String {
     let boundary= find_boundary(&points);
