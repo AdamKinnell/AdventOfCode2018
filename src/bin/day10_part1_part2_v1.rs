@@ -1,11 +1,13 @@
 #[macro_use] mod common;
 use self::common::*;
 
+use std::borrow::Borrow;
 use regex::*;
 use lazy_static::*;
 
 // Types //////////////////////////////////////////////////////////////////////
 
+#[derive(Copy, Clone)]
 struct Vec2D {
     x: i32,
     y: i32,
@@ -43,22 +45,18 @@ impl Point {
     }
 
     /*
-     Find the manhattan distance between the current position of two points.
-    */
-    fn dist(&self, other: &Point) -> i32 {
-        let x_dist = (self.position.x - other.position.x).abs() as i32;
-        let y_dist = (self.position.y - other.position.y).abs() as i32;
-        x_dist + y_dist
-    }
-
-    /*
      Move the position of the point back or forward in time by n steps.
     */
-    fn time_offset(&mut self, time_steps: i32) {
+    fn time_offset(&self, time_steps: i32) -> Point {
         let offset_x = self.velocity.x * time_steps;
         let offset_y = self.velocity.y * time_steps;
-        self.position.x += offset_x;
-        self.position.y += offset_y;
+        Point {
+            position: Vec2D {
+                x: self.position.x + offset_x,
+                y: self.position.y + offset_y,
+            },
+            velocity: self.velocity.clone(),
+        }
     }
 }
 
@@ -88,18 +86,32 @@ impl Rect {
  Calculate how close or far away all points are from each other.
  Lower numbers mean the points are closer together.
 */
-fn calculate_distance_hint(points: &Vec<Point>) -> usize {
-    find_boundary(&points).area()
+fn calculate_distance_hint<'a,T>(points: T) -> usize
+where T: IntoIterator,
+      T::Item: Borrow<Point>,
+{
+    find_boundary(points).area()
 }
 
 /*
  Find a bounding rectangle which can fit all given points.
 */
-fn find_boundary(points: &Vec<Point>) -> Rect {
-    let min_x = points.iter().map(|p| p.position.x).min().unwrap();
-    let min_y = points.iter().map(|p| p.position.y).min().unwrap();
-    let max_x = points.iter().map(|p| p.position.x).max().unwrap();
-    let max_y = points.iter().map(|p| p.position.y).max().unwrap();
+fn find_boundary<'a,T>(points: T) -> Rect
+    where T: IntoIterator,
+          T::Item: Borrow<Point>,
+{
+    let mut min_x = std::i32::MAX;
+    let mut min_y = std::i32::MAX;
+    let mut max_x = std::i32::MIN;
+    let mut max_y = std::i32::MIN;
+
+    for point in points {
+        let point = point.borrow();
+        min_x = std::cmp::min(min_x, point.position.x);
+        max_x = std::cmp::max(max_x, point.position.x);
+        min_y = std::cmp::min(min_y, point.position.y);
+        max_y = std::cmp::max(max_y, point.position.y);
+    }
 
     Rect {
         from: Vec2D { x:min_x, y:min_y },
@@ -111,8 +123,8 @@ fn find_boundary(points: &Vec<Point>) -> Rect {
  Convert the relative positions of each point into a multi-line string.
  A '#' indicates the presence of a point, while a '.' indicates the absence of any point.
 */
-fn stringify_points(points: &Vec<Point>,) -> String {
-    let boundary= find_boundary(&points);
+fn stringify_points(points: &Vec<Point>) -> String {
+    let boundary = find_boundary(points.iter());
     let num_chars = boundary.area() + boundary.height(); // Include newlines
     let mut string = String::with_capacity(num_chars);
 
@@ -134,54 +146,67 @@ fn stringify_points(points: &Vec<Point>,) -> String {
     string
 }
 
+/*
+ Use a binary search algorithm to find the integer value x, such that f(x) is minimal.
+ f() shall be a strictly unimodal function that converges to a single minimal value.
+
+ start = Hint for the starting value of x.
+ step = Hint for the initial step of x.
+*/
+fn find_minimum(start: i32, step: i32, f: &Fn(i32) -> i32) -> i32 {
+    let mut x = start;         // Current value of x
+    let mut step = step;        // Change in x each iteration
+    let mut last_fx = std::i32::MAX; // Last seen value of f(x)
+    loop {
+        // Try next value of x
+        x += step;
+        let fx = f(x);
+
+        // How do we adjust x?
+        if fx < last_fx {
+            // f() is minimal in this direction
+        } else if fx > last_fx {
+            // f() is growing, the minimum is back the other way
+            if step.abs() == 1 {
+                return x + -step; // We only just passed it
+            } else {
+                step = -step; // Search the other direction
+                step /= 2;    // Use smaller steps
+            }
+        }
+        last_fx = fx;
+    }
+}
+
 // Entry Point ////////////////////////////////////////////////////////////////
 
 fn solve(points: &Vec<String>) -> (i32, String) {
 
     // Parse points
-    let mut points = points.iter()
+    let points = points.iter()
         .map(Point::parse)
         .collect::<Vec<Point>>();
 
-    // Find timestamp (minimum of unimodal function calculate_distance_hint())
-    let mut time = 0;             // Current time
-    let mut step = 1024;          // Time step each iteration
-    let mut last = std::usize::MAX;;   // Last value
-    loop {
-        // Step through time
-        time += step;
-        points.iter_mut().for_each(|p| p.time_offset(step));
-        let distance_hint = calculate_distance_hint(&points);
-
-        // Where do we go next?
-        if distance_hint < last {
-            // Points are converging in this direction=
-        } else if distance_hint > last {
-            // Points are diverging now, let's go back the other way
-            if (step.abs() == 1) {
-                // We only just passed it
-                time += -step;
-                points.iter_mut().for_each(|p| p.time_offset(-step));
-                break;
-            }
-
-            step = -step / 2
-        }
-
-        // Remember last
-        last = distance_hint;
-    }
+    // Find timestamp of convergence
+    let timestamp= find_minimum(0, 1024, &|x| {
+        let points = points.iter()
+            .map(|p| p.time_offset(x));
+        calculate_distance_hint(points) as i32
+    });
 
     // Read message
-    let message = stringify_points(&points);
+    let converged_points = points.iter()
+        .map(|p| p.time_offset(timestamp))
+        .collect::<Vec<Point>>();
+    let message = stringify_points(&converged_points);
 
-    (time, message)
+    (timestamp, message)
 }
 
 /*
  Timings:
-    DEBUG: ~14.6ms
-    RELEASE: ~292us
+    DEBUG: ~15.27ms
+    RELEASE: ~320us
 */
 run! {
     input = "day10",
