@@ -3,6 +3,7 @@ use self::common::*;
 
 use regex::*;
 use itertools::*;
+use lazy_static::*;
 
 // Types //////////////////////////////////////////////////////////////////////
 
@@ -22,8 +23,10 @@ impl Point {
      Parse a point (including position and velocity) from a string.
     */
     fn parse(point: &String) -> Point {
-        let regex = Regex::new(r"-?\d+").unwrap(); // TODO: lazy-static
-        let captures = regex.find_iter(point);
+        lazy_static! {
+            static ref REGEX: Regex = Regex::new(r"-?\d+").unwrap();
+        }
+        let captures = REGEX.find_iter(point);
 
         let mut coordinates = captures
             .map(|m| m.as_str().parse().unwrap());
@@ -178,8 +181,8 @@ fn solve(points: &Vec<String>) -> (i32, String) {
 
 /*
  Timings:
-    DEBUG: ~1.37s
-    RELEASE: ~33.6ms
+    DEBUG: ~671ms
+    RELEASE: ~7.0ms
 */
 run! {
     input = "day10",
