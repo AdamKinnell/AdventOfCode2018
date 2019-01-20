@@ -66,9 +66,7 @@ Box ids differing by only a single character will be sorted adjacent, and can be
 `⏳O(n + m)` | `📦O(log(n))`, where n=number of child nodes, and m=number of metadata entries.
 
 ### Day 9: Marble Mania
-* **Part 1**: The game board is stored in a circular double-linked list backed by an array with the current marble tracked by a cursor. This allows efficient traversal `O(k)`, insertion `O(1)`, and removal `O(1)` of marbles as the game progresses.  
-`⏳O(n)` | `📦O(n)`, where n=number of marbles/turns.
-* **Part 2**: Same as Part 1, just dealing with bigger numbers to test the choice of algorithms and data structures.  
+* **Part 1 & 2**: The game board is stored in a circular double-linked list backed by an array with the current marble tracked by a cursor. This allows efficient traversal `O(k)`, insertion `O(1)`, and removal `O(1)` of marbles as the game progresses.  
 `⏳O(n)` | `📦O(n)`, where n=number of marbles/turns.
 
 >TODO: Complete the rest of the challenges.
