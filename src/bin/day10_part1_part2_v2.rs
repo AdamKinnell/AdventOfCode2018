@@ -51,10 +51,10 @@ impl Point {
         }
 
         // Find point of intersection
-        let x_intercept = (m1*x1 - m2*x2 + y2 - y1) / (m1 - m2);
+        let x_intersect = (m1*x1 - m2*x2 + y2 - y1) / (m1 - m2);
 
         // Find time of intersection
-        let x_dist = x1 - x_intercept;
+        let x_dist = x1 - x_intersect;
         let time_steps = x_dist / self.velocity.x as f32;
 
         Some(time_steps.abs())
