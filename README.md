@@ -69,4 +69,10 @@ Box ids differing by only a single character will be sorted adjacent, and can be
 * **Part 1 & 2**: The game board is stored in a circular double-linked list backed by an array with the current marble tracked by a cursor. This allows efficient traversal `O(k)`, insertion `O(1)`, and removal `O(1)` of marbles as the game progresses.  
 `⏳O(n)` | `📦O(n)`, where n=number of marbles/turns.
 
+### Day 10: The Stars Align
+* **Part 1 & 2 (v1)**: Use an Equal Interval search along with a heuristic function to find the time when all points converge. The heuristic function calculates the area of a bounding box required to fit all points at the given time. After approx. 28 iterations, the time of convergence is known and the position of all points at that time are rendered into the final message.
+`⏳O(n·log(m))` | `📦O(n)`, where n=number of points, and m=time to convergence.
+* **Part 1 & 2 (v2)**: Calculate the time of intersection between multiple pairs of points, take the average, and round to the nearest integer. The points are then moved to this time step and their positions are rendered into the final message.
+`⏳O(n))` | `📦O(n)`, where n=number of points.
+
 >TODO: Complete the rest of the challenges.
