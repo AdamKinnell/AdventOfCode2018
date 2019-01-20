@@ -1,9 +1,6 @@
 #[macro_use] mod common;
 use self::common::*;
 
-use regex::*;
-use lazy_static::*;
-
 // Types //////////////////////////////////////////////////////////////////////
 
 struct Vec2D {
@@ -22,22 +19,14 @@ impl Point {
      Parse a point (including position and velocity) from a string.
     */
     fn parse(point: &String) -> Point {
-        lazy_static! {
-            static ref REGEX: Regex = Regex::new(r"-?\d+").unwrap();
-        }
-        let captures = REGEX.find_iter(point);
-
-        let mut coordinates = captures
-            .map(|m| m.as_str().parse().unwrap());
-
         Point {
             position: Vec2D {
-                x: coordinates.next().unwrap(),
-                y: coordinates.next().unwrap(),
+                x: point[10..=15].trim_left().parse().unwrap(),
+                y: point[18..=23].trim_left().parse().unwrap(),
             },
             velocity: Vec2D {
-                x: coordinates.next().unwrap(),
-                y: coordinates.next().unwrap(),
+                x: point[36..=37].trim_left().parse().unwrap(),
+                y: point[40..=41].trim_left().parse().unwrap(),
             },
         }
     }
@@ -182,8 +171,8 @@ fn solve(points: &Vec<String>) -> (i32, String) {
 
 /*
  Timings:
-    DEBUG: ~11.45ms
-    RELEASE: ~287us
+    DEBUG: ~7.1ms
+    RELEASE: ~153us
 */
 run! {
     input = "day10",
