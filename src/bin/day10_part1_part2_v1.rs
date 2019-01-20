@@ -149,32 +149,71 @@ fn stringify_points(points: &Vec<Point>) -> String {
 /*
  Use a binary search algorithm to find the integer value x, such that f(x) is minimal.
  f() shall be a strictly unimodal function that converges to a single minimal value.
+ f(x) shall be non-negative for all tested values of x.
 
  start = Hint for the starting value of x.
  step = Hint for the initial step of x.
 */
-fn find_minimum(start: i32, step: i32, f: &Fn(i32) -> i32) -> i32 {
-    let mut x = start;         // Current value of x
-    let mut step = step;        // Change in x each iteration
-    let mut last_fx = std::i32::MAX; // Last seen value of f(x)
+fn find_minimum(start: i32, step: i32, f: &Fn(i32) -> usize) -> i32 {
+    let mut x = start;            // Current value of x
+    let mut step = step;          // Change in x each iteration
+    let mut last_fx = std::usize::MAX; // Last seen value of f(x)
+
+    let mut l_bound = std::i32::MIN;   // x is >= l_bound
+    let mut r_bound = std::i32::MAX;   // x is <= r_bound
+
     loop {
         // Try next value of x
-        x += step;
         let fx = f(x);
 
-        // How do we adjust x?
-        if fx < last_fx {
-            // f() is minimal in this direction
-        } else if fx > last_fx {
-            // f() is growing, the minimum is back the other way
-            if step.abs() == 1 {
-                return x + -step; // We only just passed it
-            } else {
-                step = -step; // Search the other direction
-                step /= 2;    // Use smaller steps
+        // If we're going to hit a boundary next iteration,
+        // then search between this point and the boundary.
+        if x + step <= l_bound || x + step >= r_bound {
+            // Use smaller steps
+            if step > 0 {
+                step = std::cmp::max(step / 2, 1);
+            } else if step < 0 {
+                step = std::cmp::min(step / 2, -1);
             }
         }
+
+        // Are we getting closer to the minimum of f(x)?
+        match fx.cmp(&last_fx) {
+            std::cmp::Ordering::Greater => {
+                // f(x) is increasing now, so we shouldn't keep going in this direction.
+                // It's possible that we just jumped over the minimum, so this x is the boundary.
+                if step > 0 {
+                    r_bound = x;
+                } else if step < 0 {
+                    l_bound = x;
+                }
+
+                // Go back the other way
+                step = -step;
+            },
+            std::cmp::Ordering::Less => {
+                // f(x) is still decreasing, so we're probably going in the right direction.
+                // However, It's possible that we just jumped over the minimum,
+                // so the last x is the boundary.
+                if step > 0 {
+                    l_bound = x - step;
+                } else if step < 0 {
+                    r_bound = x - step;
+                }
+            },
+            std::cmp::Ordering::Equal => {
+                // We've stopped moving
+            },
+        }
+
+        // Will oscillate on either side of x once found
+        if l_bound + 1 == r_bound - 1 {
+            // x is between the boundaries
+            return l_bound + 1
+        }
+
         last_fx = fx;
+        x += step;
     }
 }
 
@@ -188,10 +227,10 @@ fn solve(points: &Vec<String>) -> (i32, String) {
         .collect::<Vec<Point>>();
 
     // Find timestamp of convergence
-    let timestamp= find_minimum(0, 1024, &|x| {
+    let timestamp= find_minimum(0, 2048, &|x| {
         let points = points.iter()
             .map(|p| p.time_offset(x));
-        calculate_distance_hint(points) as i32
+        calculate_distance_hint(points)
     });
 
     // Read message
@@ -205,8 +244,8 @@ fn solve(points: &Vec<String>) -> (i32, String) {
 
 /*
  Timings:
-    DEBUG: ~15.27ms
-    RELEASE: ~320us
+    DEBUG: ~12.6ms
+    RELEASE: ~292us
 */
 run! {
     input = "day10",
