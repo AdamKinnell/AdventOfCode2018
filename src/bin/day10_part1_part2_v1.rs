@@ -76,7 +76,7 @@ impl Rect {
  Calculate how close or far away all points are from each other.
  Lower numbers mean the points are closer together.
 */
-fn calculate_distance_hint<'a,T>(points: T) -> usize
+fn convergence_heuristic<'a,T>(points: T) -> usize
 where T: IntoIterator,
       T::Item: Borrow<Point>,
 {
@@ -220,7 +220,7 @@ fn solve(points: &Vec<String>) -> (i32, String) {
     let timestamp= find_minimum(0, 2048, &|x| {
         let points = points.iter()
             .map(|p| p.time_offset(x));
-        calculate_distance_hint(points)
+        convergence_heuristic(points)
     });
 
     // Read message
