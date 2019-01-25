@@ -58,7 +58,7 @@ fn solve(serial_no: i32) -> (Vec2D, i32) {
         for x in 0..300 {
 
             // Check all possible square sub-matrices anchored lower-right on (x,y)
-            for s in 1..=(300-x) {
+            for s in 1..=std::cmp::min(x + 1, y + 1) {
 
                 // Calculate sum of sub-matrix (total power)
                 let _4_4 = grid[y][x];
@@ -85,8 +85,8 @@ fn solve(serial_no: i32) -> (Vec2D, i32) {
 
 /*
  Timings:
-    DEBUG: ~960ms
-    RELEASE: ~29ms
+    DEBUG: ~679ms
+    RELEASE: ~21.7ms
 */
 run! {
     input = "day11",
