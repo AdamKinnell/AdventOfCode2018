@@ -48,9 +48,6 @@ fn find_power_level(coord: Vec2D, serial_no: i32) -> i32 {
 */
 fn solve(serial_no: i32) -> Vec2D {
 
-    let mut best_pos = Vec2D { x:-1, y:-1 };
-    let mut best_power_sum = std::i32::MIN;
-
     // Generate summed-area table
     let mut grid = [[0; 300]; 300];
     for y in 0..300 {
@@ -70,6 +67,9 @@ fn solve(serial_no: i32) -> Vec2D {
     }
 
     // Find largest 3x3 sub-matrix sum
+    let mut best_pos = Vec2D { x:-1, y:-1 };
+    let mut best_power_sum = std::i32::MIN;
+
     for y in 2..300 {
         for x in 2..300 {
 
