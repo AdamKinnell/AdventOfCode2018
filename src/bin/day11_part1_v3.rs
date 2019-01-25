@@ -9,23 +9,6 @@ struct Vec2D {
     y: i32,
 }
 
-trait Index2D {
-    /*
-     Get the value at the given coordinate, or return <default> if out of bounds.
-    */
-    fn get2d(&self, x: i32, y: i32, default: i32) -> i32;
-}
-
-impl Index2D for [[i32; 300]; 300] {
-    fn get2d(&self, x: i32, y: i32, default: i32) -> i32 {
-        if x < 0 || y < 0 {
-            default
-        } else {
-            self[y as usize][x as usize]
-        }
-    }
-}
-
 // Functions //////////////////////////////////////////////////////////////////
 
 /*
@@ -78,11 +61,11 @@ fn solve(serial_no: i32) -> Vec2D {
             let power = find_power_level(coord, serial_no);
 
             // Calculate summed-area
-            let above = grid.get2d(x, y-1, 0);
-            let left = grid.get2d(x-1, y, 0);
-            let above_left = grid.get2d(x-1, y-1, 0);
+            let above      = if y > 0 { grid[y-1][x] } else { 0 };
+            let left       = if x > 0 { grid[y][x-1] } else { 0 };
+            let above_left = if y > 0 && x > 0 { grid[y-1][x-1] } else { 0 };
 
-            grid[y as usize][x as usize] = power + above + left - above_left;
+            grid[y][x] = power + above + left - above_left;
         }
     }
 
@@ -91,28 +74,27 @@ fn solve(serial_no: i32) -> Vec2D {
         for x in 2..300 {
 
             // Calculate sum of 3x3 grid (see diagram above)
-            let _4_4 = grid.get2d(x, y, 0);
-            let _4_1 = grid.get2d(x, y-3, 0);
-            let _1_4 = grid.get2d(x-3, y, 0);
-            let _1_1 = grid.get2d(x-3, y-3, 0);
+            let _4_4 = grid[y][x];
+            let _4_1 = if y >= 3 { grid[y-3][x] } else { 0 };
+            let _1_4 = if x >= 3 { grid[y][x-3] } else { 0 };
+            let _1_1 = if x >= 3 && y >= 3 { grid[y-3][x-3] } else { 0 };
             let power_sum = _4_4 - _1_4 - _4_1 + _1_1;
 
             // Remember highest power square
             if power_sum > best_power_sum {
                 best_power_sum = power_sum;
-                best_pos = Vec2D { x:(x + 1) as i32, y:(y + 1) as i32 };
+                best_pos = Vec2D { x:x as i32, y:y as i32 };
             }
         }
     }
 
-
-    Vec2D { x:best_pos.x - 2, y:best_pos.y - 2 } // Lower-Right => Top-Left
+    Vec2D { x:best_pos.x - 1, y:best_pos.y - 1 } // (0-based) Lower-Right => (1-based) Top-Left
 }
 
 /*
  Timings:
-    DEBUG: ~14.6ms
-    RELEASE: ~482us
+    DEBUG: ~13.4ms
+    RELEASE: ~365us
 */
 run! {
     input = "day11",
