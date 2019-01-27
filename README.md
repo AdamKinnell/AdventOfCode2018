@@ -75,4 +75,14 @@ Box ids differing by only a single character will be sorted adjacent, and can be
 * **Part 1 & 2 (v2)**: Calculate the time of intersection between multiple pairs of points, take the average, and round to the nearest integer. The points are then moved to this time step and their positions are rendered into the final message.  
 `⏳O(n)` | `📦O(n)`, where n=number of points.
 
+### Day 11: Chronal Charge
+* **Part 1 (v1)**: Generate 300x300 matrix of fuel cell values, then sum the values of every possible 3x3 submatrix.  
+`⏳O(n²·m²)` | `📦O(n²)`, where n=dimensions of matrix, and m=dimensions of submatrix.
+* **Part 1 (v2)**: Iterate over all coordinates of the 300x300 matrix. For each, we calculate and save the both the power level and the sum of 3 power levels to the left (inclusive). We then sum the 3 power level sums above each coordinate to get us the sum of values of every 3x3 submatrix in `2m` steps.  
+`⏳O(n²·m)` | `📦O(n²)`, where n=dimensions of matrix, and m=dimensions of submatrix.
+* **Part 1 (v3)**: Generate a [summed-area table](https://en.wikipedia.org/wiki/Summed-area_table) for the 300x300 matrix; where each coordinate contains the sum of all coordinates above and to the left (inclusive). Using this, we can calculate the sum of any submatrix in constant time using the inclusion-exclusion principle. We then iterate over each coordinate of the matrix and sum the 3x3 submatrix anchored there. The coordinate of the submatrix with the largest sum is remembered as the final answer.  
+`⏳O(n²)` | `📦O(n²)`, where n=dimensions of matrix.
+* **Part 2**: Same as Part 1 (v3), except we look at all square submatrices anchored at their lower-right whose dimensions fit within the bounds of the matrix.  
+`⏳O(n³)` | `📦O(n²)`, where n=dimensions of matrix.
+
 >TODO: Complete the rest of the challenges.
