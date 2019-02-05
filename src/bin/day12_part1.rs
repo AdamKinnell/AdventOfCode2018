@@ -97,7 +97,7 @@ impl PotRow {
 
         // Pad rows to allow for windows containing first and last planted pots
         for _ in 0..2 { self.pots.push_front(false) }
-        for _ in 0..2 { self.pots.push_back(false) }
+        for _ in 0..4 { self.pots.push_back(false) }
         self.zero_at += 2; // Account for added left padding
 
         // Establish sliding window starting before the first plant
@@ -106,10 +106,10 @@ impl PotRow {
 
         // Iteratively slide window right along pots and record the transition results
         let mut i = 0;
-        while i < self.pots.len() {
+        while i < self.pots.len() - 2 {
 
             // Slide window
-            let context_pot = *self.pots.get(i+2).unwrap_or(&false);
+            let context_pot = self.pots[i+2];
             context.shift(context_pot);
 
             // Process transition in context
@@ -163,8 +163,8 @@ fn solve(lines: Vec<String>, generations: i32) -> i32 {
 
 /*
  Timings:
-    DEBUG: ~388us
-    RELEASE: ~8.45us
+    DEBUG: ~400us
+    RELEASE: ~8.14us
 */
 run! {
     input = "day12",
