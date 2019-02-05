@@ -1,119 +1,144 @@
 #[macro_use] mod common;
 use self::common::*;
 
-use std::collections::HashSet;
+use std::collections::VecDeque;
 
 // Types //////////////////////////////////////////////////////////////////////
 
 /*
- Represents a set of transitions for pots.
+ Represents the state of a pot P, as well as that of two pots on either side.
+ i.e. "LLPRR"
+
+ The state of each pot is represented as a single bit,
+ and all 5 states are packed into the 5 low-order bits of a single byte.
+*/
+#[derive(Copy, Clone)]
+struct PotContext(u8);
+
+impl PotContext {
+
+    /*
+     Parse context from a line of the form: "...##"
+    */
+    fn parse(context: &str) -> PotContext {
+        assert_eq!(context.len(), 5);
+        PotContext(context.chars().fold(0, |pc, c| {
+            if c == '#' { (pc << 1) | 1 } else { (pc << 1) | 0 }
+        }))
+    }
+
+    /*
+     Shift the pot context over to the right by one pot.
+     The new pot's state will be recorded, and the old left-most state will be discarded.
+    */
+    fn shift(&mut self, pot_state: bool) {
+        self.0 <<= 1;              // Move over
+        self.0 &= 0b11111;         // Discard left-most pot
+        self.0 |= pot_state as u8; // Record right-most pot state
+    }
+}
+
+/*
+ Represents a set of transitions for pots based on their neighbors.
 */
 struct PotTransitionRules {
-    transitions: HashSet<String>, // String contains 5 chars.
+    transitions: [bool; 32], // 2**5 permutations of 5 bits
 }
 
 impl PotTransitionRules {
 
     /*
-     Parse transition table from a sequence of lines like:
-        "...## => #"
-        "..#.. => #"
-        ...
+     Parse transition table from a sequence of lines of the form: "...## => #"
     */
-    fn parse<'a>(lines: impl IntoIterator<Item=&'a String>) -> PotTransitionRules {
-        let transitions = lines.into_iter()
-            .filter(|l| l.ends_with('#')) // Results in plant existing
-            .map(|l| l.chars().take(5).collect::<String>())
-            .collect::<HashSet<String>>();
-
+    fn parse(lines: &[String]) -> PotTransitionRules {
+        let mut transitions = [false; 32];
+        for line in lines {
+            if line.ends_with('#') {
+                let index = PotContext::parse(&line[0..5]);
+                transitions[index.0 as usize] = true;
+            }
+        }
         PotTransitionRules { transitions:transitions }
     }
 
     /*
-     Check if a pot P in the given context should contain a plan after transitioning.
-     The state of two pots on either side of P should also be given.
-     i.e. "LLPRR"
+     Evaluate the state of the center pot in the given context.
     */
-    fn evaluate(&self, context: impl Into<String>) -> char {
-        let context = context.into();
-        assert_eq!(context.len(), 5);
-
-        if self.transitions.contains(&context) {
-            '#'
-        } else {
-            '.'
-        }
+    fn evaluate(&self, context: PotContext) -> bool {
+        self.transitions[context.0 as usize]
     }
 }
 
 /*
- Represents a row of pots, each with it's own index and state.
+ Represents a contiguous row of pots, each of which may either have a plant or not.
 */
 struct PotRow {
-    zero_at: i32, // The position of the 0 index.
-    pots: Vec<char>,
+    zero_at: i32,         // The position of the 0 index to allow storing negative indices
+    pots: VecDeque<bool>, // The state of each pot; True indices are offset by -zero_at
 }
 
 impl PotRow {
 
     /*
-     Parse the initial state of pots from a line such as:
-        "#..#.#..##......###...###"
+     Parse the initial state of pots from a line of the form: "#..#.#..##.".
+     '#' indicates a plant in that position, while '.' indicates the absence of one.
     */
     fn parse(line: &str) -> PotRow {
-        let line = format!("....{}....", line);
-        let pots = line.chars().collect();
-        PotRow { pots:pots, zero_at:4 }
+        let pots = line.chars()
+            .map(|c| c == '#')
+            .collect::<VecDeque<bool>>();
+        PotRow { pots:pots, zero_at:0 }
     }
 
     /*
      Spread plants according to the given set of transition rules.
-     TODO: This code is terrible.
     */
     fn spread(&mut self, rules: &PotTransitionRules) {
 
-        // Calculate new state for every pot which could have changed
-        // (Worst case: "....# => #" or "#...." => #)
-        // Will use existing 4-pot padding on either side.
-        let transitioned_pots = self.pots
-            .windows(5)
-            .map(|context| context.iter().collect::<String>() )
-            .map(|context| rules.evaluate(context))
-            .collect::<String>();
+        // Pad rows to allow for windows containing first and last planted pots
+        for _ in 0..2 { self.pots.push_front(false) }
+        for _ in 0..2 { self.pots.push_back(false) }
+        self.zero_at += 2; // Account for added left padding
 
-        // Remove all padding
-        let left_plant = transitioned_pots.find('#').unwrap();
-        let right_plant = transitioned_pots.rfind('#').unwrap();
-        let unpadded_pots = &transitioned_pots[left_plant..=right_plant];
+        // Establish sliding window starting before the first plant
+        // i.e. "....."
+        let mut context = PotContext(0);
 
-        // Ensure a constant padding of 4 pots either side for future spreading
-        self.pots = "....".chars()
-            .chain(unpadded_pots.chars())
-            .chain("....".chars())
-            .collect::<Vec<char>>();
+        // Iteratively slide window right along pots and record the transition results
+        let mut i = 0;
+        while i < self.pots.len() {
 
-        // Update zero position
-        let mut zero_at = self.zero_at;
-        zero_at -= 2;                 // Transitioning initially shortens by 2 padding pots
-        zero_at -= left_plant as i32; // After removing padding
-        zero_at += 4;                 // After adding padding
-        self.zero_at = zero_at;
+            // Slide window
+            let context_pot = *self.pots.get(i+2).unwrap_or(&false);
+            context.shift(context_pot);
+
+            // Process transition in context
+            let current_pot = &mut self.pots[i];
+            *current_pot = rules.evaluate(context);
+
+            i += 1;
+        }
+
+        //Remove padding
+        while *self.pots.front().unwrap() == false {
+            self.pots.pop_front();
+            self.zero_at -= 1;
+        }
+        while *self.pots.back().unwrap() == false {
+            self.pots.pop_back();
+        }
+
     }
 
     /*
      Sum indexes of all pots containing a plant.
     */
     fn sum(&self) -> i32 {
-        self.pots.iter()
-            .enumerate()
-            .fold(0, |sum, (i,p)| {
-                if *p == '#' {
-                    let i = i as i32 - self.zero_at;
-                    sum + i
-                } else {
-                    sum
-                }
-            })
+        let mut sum = 0;
+        for (i, pot) in self.pots.iter().enumerate() {
+            if *pot { sum += i as i32 - self.zero_at }
+        }
+        sum
     }
 }
 
@@ -138,8 +163,8 @@ fn solve(lines: Vec<String>, generations: i32) -> i32 {
 
 /*
  Timings:
-    DEBUG: ~6.13ms
-    RELEASE: ~230us
+    DEBUG: ~388us
+    RELEASE: ~8.45us
 */
 run! {
     input = "day12",
