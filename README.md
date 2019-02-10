@@ -85,4 +85,10 @@ Box ids differing by only a single character will be sorted adjacent, and can be
 * **Part 2**: Same as Part 1 (v3), except we look at all square submatrices anchored at their lower-right whose dimensions fit within the bounds of the matrix.  
 `⏳O(n³)` | `📦O(n²)`, where n=dimensions of matrix.
 
+### Day 12: Subterranean Sustainability
+* **Part 1**: Store the sequence of pot states (ignoring leading and trailing empty pots) in a dequeue, along with an offset from zero to track the actual index of each pot. For each generation, we look at each pot and it's 4 closest neighbors to determine it's new state. This is accomplished using a sliding window of 5 bits to index a 32-entry lookup table detailing the new state of a pot when given the context of it's neighbors. Finally, we sum the indices of each pot containing a plant to get our final answer.  
+`⏳O(n·m)` | `📦O(m)`, where n=number of generations, and m=number of pots in each generation.
+* **Part 2**: After a hundred or so generations, we find that each generation merely shifts the same sequence of pot states over by some number. We therefore check the sequence of pots between each generation until only the offset changes (making full use of the sequence+offset data structure). We then multiply the offset change for one generation by the number of remaining generations to skip and "fast forward" to the final generation.  
+`⏳O(n·m)` | `📦O(m)`, where n=number of generations, and m=number of pots in each generation.
+
 >TODO: Complete the rest of the challenges.
