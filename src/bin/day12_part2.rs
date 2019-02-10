@@ -71,9 +71,13 @@ impl PotTransitionRules {
 
 /*
  Represents a contiguous row of pots, each of which may either have a plant or not.
+
+ Only the pots between the left-most and right-most planted pots (inclusive) are stored.
+ To track the absolute indices of each pot, an offset from zero is also stored.
 */
+#[derive(Clone)]
 struct PotRow {
-    zero_at: i32,         // The position of the 0 index to allow storing negative indices
+    zero_at: i64,         // The position of the 0 index to allow storing negative indices
     pots: VecDeque<bool>, // The state of each pot; True indices are offset by -zero_at
 }
 
@@ -133,10 +137,10 @@ impl PotRow {
     /*
      Sum indexes of all pots containing a plant.
     */
-    fn sum(&self) -> i32 {
+    fn sum(&self) -> i64 {
         let mut sum = 0;
         for (i, pot) in self.pots.iter().enumerate() {
-            if *pot { sum += i as i32 - self.zero_at }
+            if *pot { sum += i as i64 - self.zero_at }
         }
         sum
     }
@@ -147,33 +151,45 @@ impl PotRow {
 /*
  Simulate plant growth over n generations.
 */
-fn solve(lines: Vec<String>, generations: i32) -> i32 {
+fn solve(lines: Vec<String>, generations: i64) -> i64 {
 
     // Parse input
-    let mut pots = PotRow::parse(&lines[0][15..]);
+    let mut row = PotRow::parse(&lines[0][15..]);
     let rules = PotTransitionRules::parse(&lines[2..]);
 
     // Evolve over n generations
-    for _ in 0..generations {
-        pots.spread(&rules);
+    for gen in 1..=generations {
+        let last_row = row.clone();
+
+        row.spread(&rules);
+
+        // Check if relative positions have reached equilibrium
+        if row.pots == last_row.pots {
+            // Only offset is changing now, so "fast-forward"
+            let gen_offset = row.zero_at - last_row.zero_at;
+            let gens_remaining = generations - gen;
+            row.zero_at += gen_offset * gens_remaining;
+            break
+        }
     }
 
-    pots.sum()
+    // Pots have evolved n generations
+    row.sum()
 }
 
 /*
  Timings:
-    DEBUG: ~400us
-    RELEASE: ~8.14us
+    DEBUG: ~3.77ms
+    RELEASE: ~72.3us
 */
 run! {
     input = "day12",
     run = |input: &Input| {
-        let sum = solve(input.to_lines(), 20);
-        assert_eq!(sum, 1733);
+        let sum = solve(input.to_lines(), 50000000000);
+        assert_eq!(sum, 1000000000508);
         println!("Sum of pot ids containing plants: {}", sum);
     },
     bench = |input: &Input| {
-        solve(input.to_lines(), 20);
+        solve(input.to_lines(), 50000000000);
     }
 }
